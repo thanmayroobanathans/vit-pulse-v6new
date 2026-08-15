@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIT PULSE — Psychological Classification Engine</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grain"></div>
+<main>
+<header>
+  <div><b>VIT PULSE</b><span> // PSYCHOLOGISCHE KLASSIFIZIERUNG</span></div>
+  <div class="online"><i></i> MACHINE ONLINE</div>
+</header>
+
+<section id="home" class="screen active">
+<div class="orbit o2"></div><div class="machine-eye">◉</div>
+  </div>
+  <div class="stamp">AKTENZEICHEN VP–0036</div>
+  <h1>THE MACHINE<br><em>HAS A THEORY</em><br>ABOUT YOU.</h1>
+  <p class="lead">A satirical computational personality experiment. Jung-inspired typology, modern personality dimensions, probabilistic matching and 36 fictional archetypes.</p>
+  <div class="notice"><b>IMPORTANT</b><br>This is entertainment/research software, not a diagnosis. Your classification runs in your browser. Anonymous aggregated learning is optional.</div>
+  <div class="auth-panel" id="authPanel"><button class="secondary" id="googleLogin">CONTINUE WITH GOOGLE</button><span id="authStatus">Guest mode available.</span></div>
+<div class="name-box">
+  <label for="userName">SUBJECT NAME</label>
+  <input id="userName" maxlength="40" autocomplete="name" placeholder="Enter your name">
+</div>
+<label class="consent-row"><input type="checkbox" id="dataConsent"><span>I agree to send my answers and personality profile for VIT PULSE research and model improvement. Guest mode remains available.</span></label>
+<button class="primary" id="begin">ENTER THE MACHINE →</button>
+  <small>36 ARCHETYPES · 36 INPUTS · LOCAL CLASSIFICATION · SHAREABLE DOSSIER</small>
+</section>
+
+<section id="quiz" class="screen">
+  <div class="meta"><span id="progress"></span><span id="state">STATE q0</span></div>
+  <div class="tape"><i id="tape"></i></div>
+  <div class="terminal">
+    <div class="terminal-top"><span>TURING PROCESS // READ → WRITE → MOVE</span><span id="streak">CHAIN 0</span></div>
+    <label id="domain">INPUT DOMAIN</label>
+    <h2 id="question"></h2>
+    <div class="micro-prompt" id="microPrompt">Choose the answer that feels most like your first instinct.</div><div id="options"></div><div class="question-foot"><span id="answerHint">NO WRONG ANSWER</span><span id="responseTime">~10 SEC</span></div>
+  </div>
+  <div class="machine-note" id="machineNote"></div><div class="micro-reveal" id="microReveal"></div>
+</section>
+
+<section id="result" class="screen">
+  <div class="stamp">KLASSIFIZIERUNG ABGESCHLOSSEN</div>
+  <div class="hero-result">
+    <small>SUBJECT</small>
+    <div class="subject-name" id="resultName"></div>
+    <small>PRIMARY CLASSIFICATION</small>
+    <h1 id="archetype"></h1>
+    <code id="archetypeCode"></code>
+    <div class="score"><span id="matchScore"></span><small>% MATCH</small></div>
+    <p id="description"></p>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <small>JUNG-INSPIRED AXES</small>
+      <div id="jungStats"></div>
+    </div>
+    <div class="panel">
+      <small>PERSONALITY PROFILE</small>
+      <div id="bigFive"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <small>ARCHETYPE MATCH RANKING</small>
+    <div id="ranking"></div>
+  </div>
+
+  <div class="panel">
+    <small>CAMPUS SIGNALS</small>
+    <div id="campusStats"></div>
+  </div>
+
+  <div class="fact">
+    <div class="fact-label" id="factLabel">MACHINE OBSERVATION</div>
+    <p id="fact"></p>
+    <button class="secondary" id="nextFact">ANOTHER FACT →</button>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="share">SHARE RESULT</button>
+    <button class="secondary" id="shareData">SEND RESULT TO A FRIEND</button>
+    <button class="secondary" id="saveImage">SAVE RESULT CARD</button>
+    <button class="secondary" id="again">RUN AGAIN</button>
+  </div>
+  <div class="method-note">MATCH SCORE = relative compatibility across the fixed archetype library. It is not a clinical diagnosis or an absolute probability.</div>
+  <div id="saveStatus" class="save-status"></div><div class="share-box" id="shareBox">
+    <label>RESULT LINK</label>
+    <input id="shareLink" readonly>
+    <button class="secondary" id="copyLink">COPY LINK</button>
+  </div>
+  <p class="share-status" id="shareStatus"></p>
+
+  <div class="privacy">
+    <b>OPTIONAL ANONYMOUS AGGREGATION</b>
+    <p>Help calibrate future versions by sending only an anonymous response fingerprint and archetype result. No name, email, phone number or raw free text is sent.</p>
+    <label><input type="checkbox" id="optin"> I voluntarily opt in to anonymous aggregated research.</label>
+    <button class="secondary" id="sendData">SEND ANONYMOUS RESULT</button>
+    <small id="sendStatus"></small>
+  </div>
+</section>
+</main>
+<script type="module" src="firebase-app.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
