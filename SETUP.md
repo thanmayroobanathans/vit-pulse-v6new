@@ -1,12 +1,8 @@
-# VIT PULSE V5 — GitHub Pages + Firebase
+# Setup
 
-1. Create a Firebase project.
-2. Enable Authentication → Google.
-3. Create a Firestore database.
-4. Copy `firebase-config.example.js` to `firebase-config.js` and fill in your Web App config.
-5. Add your GitHub Pages domain to Firebase Authentication authorized domains.
-6. Deploy `firestore.rules`.
-7. Push the files to GitHub and enable GitHub Pages.
-
-The frontend stays static on GitHub Pages. Firebase provides Google authentication and Firestore.
-Research data is submitted only after explicit consent and only for a signed-in user.
+1. Firebase Console → Authentication → Sign-in method → enable Google.
+2. Firebase Console → Authentication → Settings → Authorized domains → add `thanmayroobanathans.github.io`.
+3. Firebase Console → Firestore Database → Rules → paste `firestore.rules`.
+4. Put every file in this folder in the GitHub Pages repository root.
+5. Open `https://thanmayroobanathans.github.io/vit-pulse-v6new/`.
+6. Hard-refresh once after deployment.
