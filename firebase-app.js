@@ -1,40 +1,25 @@
 import { initializeApp } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut
-} from
+import { getAuth } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-import {
-  getFirestore
-} from
+import { getFirestore } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
 
-
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const auth = getAuth(app);
 
-const googleProvider = new GoogleAuthProvider();
+const db = getFirestore(app);
 
-googleProvider.setCustomParameters({
-  prompt: "select_account"
-});
-
-
-// ==================================================
-// GOOGLE LOGIN
-// ==================================================
-
-export async function loginWithGoogle() {
+export {
+  app,
+  auth,
+  db
+};export async function loginWithGoogle() {
 
   try {
 
