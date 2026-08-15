@@ -1,13 +1,28 @@
 import { initializeApp } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
-import { getAuth } from
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  onAuthStateChanged,
+  signOut
+} from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-import { getFirestore } from
+import {
+  getFirestore
+} from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
+
+
+/* ==================================================
+   FIREBASE
+================================================== */
 
 const app = initializeApp(firebaseConfig);
 
@@ -15,13 +30,24 @@ const auth = getAuth(app);
 
 const db = getFirestore(app);
 
-export {
-  app,
-  auth,
-  db
-};export async function loginWithGoogle() {
+const googleProvider = new GoogleAuthProvider();
+
+googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
+
+
+/* ==================================================
+   GOOGLE LOGIN
+================================================== */
+
+export async function loginWithGoogle() {
 
   try {
+
+    /*
+      Popup is convenient on desktop.
+    */
 
     const result = await signInWithPopup(
       auth,
@@ -30,191 +56,110 @@ export {
 
     console.log(
       "Google authentication successful:",
-      result.user.displayName
+      result.user.email
     );
 
     return result.user;
 
   } catch (error) {
 
-    console.error("Google login error:", error);
+    console.error(
+      "Google authentication error:",
+      error
+    );
 
-    let message = "Google sign-in failed.";
+    /*
+      If popup is blocked, switch to redirect.
+    */
 
-    if (error.code === "auth/popup-blocked") {
-      message =
-        "Google sign-in was blocked by your browser. Allow pop-ups and try again.";
+    if (
+      error.code === "auth/popup-blocked" ||
+      error.code === "auth/popup-closed-by-user" ||
+      error.code === "auth/cancelled-popup-request"
+    ) {
+
+      console.log(
+        "Popup unavailable. Starting redirect login..."
+      );
+
+      await signInWithRedirect(
+        auth,
+        googleProvider
+      );
+
+      return null;
     }
-
-    if (error.code === "auth/popup-closed-by-user") {
-      message =
-        "Google sign-in was cancelled.";
-    }
-
-    if (error.code === "auth/unauthorized-domain") {
-      message =
-        "This website domain is not authorized in Firebase Authentication.";
-    }
-
-    if (error.code === "auth/invalid-api-key") {
-      message =
-        "Firebase configuration contains an invalid API key.";
-    }
-
-    alert(message);
 
     throw error;
   }
 }
 
 
-// ==================================================
-// AUTH STATE
-// ==================================================
+/* ==================================================
+   REDIRECT RESULT
+================================================== */
 
-export function requireGoogleLogin(callback) {
-
-  onAuthStateChanged(auth, (user) => {
-
-    if (user) {
-
-      console.log(
-        "AUTHENTICATED:",
-        user.displayName,
-        user.email
-      );
-
-      hideLoginScreen();
-
-      callback(user);
-
-    } else {
-
-      showLoginScreen();
-
-    }
-
-  });
-
-}
-
-
-// ==================================================
-// LOGIN SCREEN
-// ==================================================
-
-function showLoginScreen() {
-
-  const loginScreen =
-    document.getElementById("login-screen");
-
-  if (loginScreen) {
-    loginScreen.style.display = "flex";
-  }
-
-  const application =
-    document.getElementById("application");
-
-  if (application) {
-    application.style.display = "block";
-  }
-
-}
-
-
-// ==================================================
-// HIDE LOGIN SCREEN
-// ==================================================
-
-function hideLoginScreen() {
-
-  const loginScreen =
-    document.getElementById("login-screen");
-
-  if (loginScreen) {
-    loginScreen.style.display = "none";
-  }
-
-  const application =
-    document.getElementById("application");
-
-  if (application) {
-    application.style.display = "block";
-  }
-
-}
-
-
-// ==================================================
-// LOGOUT
-// ==================================================
-
-export async function logout() {
+export async function handleRedirectLogin() {
 
   try {
 
-    await signOut(auth);
+    const result = await getRedirectResult(auth);
 
-    showLoginScreen();
+    if (result && result.user) {
+
+      console.log(
+        "Redirect Google login successful:",
+        result.user.email
+      );
+
+      return result.user;
+    }
+
+    return null;
 
   } catch (error) {
 
     console.error(
-      "Logout failed:",
+      "Redirect authentication error:",
       error
     );
 
+    throw error;
   }
+}
+
+
+/* ==================================================
+   AUTH STATE
+================================================== */
+
+export function watchAuth(callback) {
+
+  return onAuthStateChanged(
+    auth,
+    callback
+  );
+}
+
+
+/* ==================================================
+   LOGOUT
+================================================== */
+
+export async function logout() {
+
+  await signOut(auth);
 
 }
 
 
-// ==================================================
-// LOGIN BUTTON
-// ==================================================
+/* ==================================================
+   EXPORTS
+================================================== */
 
-const googleButton =
-  document.getElementById("google-login");
-
-if (googleButton) {
-
-  googleButton.addEventListener(
-    "click",
-    async () => {
-
-      googleButton.disabled = true;
-
-      googleButton.textContent =
-        "CONNECTING TO GOOGLE...";
-
-      try {
-
-        await loginWithGoogle();
-
-      } finally {
-
-        googleButton.disabled = false;
-
-        googleButton.textContent =
-          "CONTINUE WITH GOOGLE";
-
-      }
-
-    }
-  );
-
-}
-
-
-// ==================================================
-// START AUTH GUARD
-// ==================================================
-
-requireGoogleLogin((user) => {
-
-  console.log(
-    "VIT PULSE USER:",
-    user.uid
-  );
-
-});
+export {
+  app,
+  auth,
+  db,
+  googleProvider
+};
