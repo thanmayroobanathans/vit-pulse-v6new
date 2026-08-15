@@ -1,1510 +1,1056 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-
-  <title>Made by heldenmunt — Classification Machine</title>
-
-  <link rel="stylesheet" href="style.css">
-
-  <style>
-    /* =========================================================
-       TURING-ERA / CODEBREAKING MACHINE UI
-       ========================================================= */
-
-    :root {
-      --paper: #d8d0b8;
-      --paper-dark: #bcb49d;
-      --ink: #171914;
-      --muted: #59594d;
-      --machine: #292b25;
-      --machine-dark: #171914;
-      --line: #777763;
-      --green: #788a67;
-      --red: #7b4136;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background:
-        radial-gradient(
-          circle at center,
-          #34362e 0%,
-          #1d1f1a 55%,
-          #11120f 100%
-        );
-      color: var(--ink);
-      font-family: Georgia, "Times New Roman", serif;
-    }
-
-    button,
-    input {
-      font-family: "Courier New", monospace;
-    }
-
-    /* =========================================================
-       AUTH WALL
-       ========================================================= */
-
-    #login-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 999999;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      padding: 24px;
-
-      background:
-        repeating-linear-gradient(
-          0deg,
-          rgba(255,255,255,.015) 0px,
-          rgba(255,255,255,.015) 1px,
-          transparent 1px,
-          transparent 4px
-        ),
-        radial-gradient(
-          circle at center,
-          #34362d,
-          #161813 70%
-        );
-
-      color: var(--paper);
-    }
-
-    .login-machine {
-      width: min(680px, 100%);
-
-      padding: 44px;
-
-      border: 1px solid #66675a;
-
-      background:
-        linear-gradient(
-          rgba(255,255,255,.015),
-          rgba(0,0,0,.08)
-        ),
-        #20221c;
-
-      box-shadow:
-        0 0 0 8px #11120f,
-        0 0 0 9px #55564b,
-        0 35px 100px rgba(0,0,0,.75);
-    }
-
-    .machine-label {
-      margin-bottom: 34px;
-
-      color: #9b9c8b;
-
-      font-family: "Courier New", monospace;
-      font-size: 10px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-    }
-
-    .machine-title {
-      margin-bottom: 30px;
-
-      font-family: "Courier New", monospace;
-      font-size: clamp(38px, 8vw, 74px);
-      font-weight: 900;
-      line-height: .86;
-      letter-spacing: -4px;
-
-      text-transform: uppercase;
-    }
-
-    .login-machine p {
-      max-width: 560px;
-
-      color: #a7a695;
-
-      line-height: 1.8;
-      font-size: 15px;
-    }
-
-    #googleLogin {
-      width: 100%;
-
-      margin-top: 20px;
-      padding: 17px;
-
-      border: 1px solid #858675;
-
-      background: var(--paper);
-      color: #151611;
-
-      font-family: "Courier New", monospace;
-      font-size: 13px;
-      font-weight: bold;
-      letter-spacing: 2px;
-
-      cursor: pointer;
-
-      transition: .15s ease;
-    }
-
-    #googleLogin:hover {
-      background: #eee8d5;
-      transform: translateY(-1px);
-    }
-
-    #googleLogin:disabled {
-      opacity: .5;
-      cursor: wait;
-    }
-
-    .login-status {
-      margin-top: 17px;
-
-      color: #77786d;
-
-      font-family: "Courier New", monospace;
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-align: center;
-    }
-
-    #application {
-      display: none;
-    }
-
-    #application.authenticated {
-      display: block;
-    }
-
-    /* =========================================================
-       APPLICATION SHELL
-       ========================================================= */
-
-    #application {
-      min-height: 100vh;
-    }
-
-    .grain {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 100;
-
-      opacity: .13;
-
-      background:
-        repeating-linear-gradient(
-          0deg,
-          transparent 0px,
-          transparent 3px,
-          rgba(255,255,255,.035) 4px
-        );
-    }
-
-    main {
-      width: min(1050px, calc(100% - 32px));
-      margin: auto;
-      padding-bottom: 100px;
-    }
-
-    /* =========================================================
-       HEADER
-       ========================================================= */
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      padding: 24px 0;
-
-      border-bottom: 1px solid #55574d;
-
-      color: var(--paper);
-      font-family: "Courier New", monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-    }
-
-    header b {
-      font-size: 15px;
-      letter-spacing: 4px;
-    }
+/* ============================================================
+   HELDENMUNT BOYS — CAMPUS MACHINE
+   Personality Classification Engine
+   ------------------------------------------------------------
+   Fictional entertainment software.
+   Browser-side classification.
+   No clinical diagnosis.
+   ============================================================ */
+
+"use strict";
+
+/* ============================================================
+   QUESTIONS
+   ============================================================ */
+
+const QUESTIONS = [
+  ["Two free hours on campus. Where do you go?",
+    ["Somewhere I have never been","A place with my people","A quiet place to think","Finish something"],
+    ["O","E","I","C"],"CAMPUS"],
+
+  ["SJT / Amazon feels:",
+    ["Crowded and energetic","Social and convenient","Chaotic but useful","I avoid crowds"],
+    ["E","E","O","I"],"SJT / AMAZON"],
+
+  ["A friend changes tonight's plan last minute.",
+    ["Excellent. Improvise.","Who is coming?","Why change it?","Give me details."],
+    ["N","E","C","C"],"SOCIAL"],
+
+  ["A difficult optional problem appears.",
+    ["I have to solve it.","Maybe with friends.","Later.","I get curious immediately."],
+    ["T","E","C","N"],"ACADEMIC"],
+
+  ["Which campus atmosphere attracts you?",
+    ["Busy and alive","Quiet and focused","Unpredictable","Organized"],
+    ["E","I","N","C"],"VIBE"],
+
+  ["Your group project is falling apart.",
+    ["Take command.","Calm everyone.","Fix my part quietly.","Try a different approach."],
+    ["E","F","C","N"],"GROUP"],
+
+  ["You discover an unknown campus place.",
+    ["Explore immediately.","Send it to friends.","Observe first.","Map it mentally."],
+    ["N","E","I","T"],"EXPLORATION"],
+
+  ["Unexpected ₹1,000.",
+    ["Save it.","Use it for an experience.","Buy something interesting.","Spend it with friends."],
+    ["C","N","N","E"],"CHOICE"],
+
+  ["Best compliment?",
+    ["You're brilliant.","You're dependable.","You're interesting.","People feel comfortable with you."],
+    ["T","C","N","F"],"SOCIAL"],
+
+  ["Exam is seven days away.",
+    ["Plan the week.","Wait for pressure.","Study with others.","Attack the hardest topic."],
+    ["C","C","E","N"],"ACADEMIC"],
+
+  ["Someone strongly disagrees with you.",
+    ["Debate.","Ask why.","Let it go.","Find evidence."],
+    ["T","F","F","T"],"SOCIAL"],
+
+  ["More attractive?",
+    ["Stable routine.","New challenge.","Crowded night.","Hard intellectual problem."],
+    ["C","N","E","T"],"VIBE"],
+
+  ["Nobody is watching. Default?",
+    ["My own system.","Explore interests.","Contact someone.","Relax."],
+    ["C","N","E","F"],"PRIVATE"],
+
+  ["Lead strangers.",
+    ["Organize.","Ask everyone.","Plan quietly.","Make it an adventure."],
+    ["C","F","T","E"],"GROUP"],
+
+  ["Which failure bothers you most?",
+    ["Wasted potential.","Letting someone down.","Unable to adapt.","Not understanding why."],
+    ["C","F","N","T"],"REFLECTION"],
+
+  ["Pick a night.",
+    ["Long conversation.","Solo project until 2 AM.","Spontaneous trip.","Early sleep + tomorrow plan."],
+    ["F","T","N","C"],"NIGHT"],
 
-    header span {
-      color: #77796c;
-      margin-left: 10px;
-    }
-
-    .online {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      color: #929683;
-    }
-
-    .online i {
-      width: 7px;
-      height: 7px;
-
-      display: inline-block;
-
-      border-radius: 50%;
+  ["Closest statement?",
+    ["I need novelty.","I need structure.","I need people.","I need ideas."],
+    ["N","C","E","N"],"IDENTITY"],
 
-      background: var(--green);
+  ["One machine button.",
+    ["UNKNOWN","CLASSIFIED","ARCHIVE","OVERRIDE"],
+    ["N","C","I","E"],"MACHINE"],
 
-      box-shadow: 0 0 8px rgba(120,138,103,.7);
-    }
+  ["A rule seems inefficient.",
+    ["Follow it.","Question it.","Find a workaround.","Ask why it exists."],
+    ["C","T","N","F"],"RULES"],
 
-    /* =========================================================
-       SCREENS
-       ========================================================= */
+  ["Someone new joins your group.",
+    ["Talk first.","Observe.","Ask about their interests.","Give them a task."],
+    ["E","I","F","C"],"SOCIAL"],
 
-    .screen {
-      display: none;
-      padding-top: 70px;
-    }
+  ["You get a free weekend.",
+    ["Plan it.","Travel somewhere random.","Stay home and think.","Call everyone."],
+    ["C","N","I","E"],"WEEKEND"],
 
-    .screen.active {
-      display: block;
-    }
+  ["A debate becomes emotional.",
+    ["Focus on facts.","Protect the relationship.","Leave it.","Find the underlying idea."],
+    ["T","F","I","N"],"CONFLICT"],
 
-    /* =========================================================
-       HOME
-       ========================================================= */
+  ["Your room is messy.",
+    ["Fix it now.","Ignore it.","Create a system.","It is creatively organized."],
+    ["C","N","C","O"],"ORDER"],
 
-    #home {
-      min-height: 760px;
+  ["A professor gives an ambiguous task.",
+    ["Ask for criteria.","Experiment.","Research it.","Make my own interpretation."],
+    ["C","N","N","T"],"ACADEMIC"],
 
-      color: var(--paper);
+  ["A friend needs advice.",
+    ["Give a logical plan.","Listen first.","Tell them what I'd do.","Ask what they really want."],
+    ["T","F","T","F"],"EMPATHY"],
 
-      position: relative;
-    }
+  ["A new club appears.",
+    ["Join immediately.","Investigate first.","Ask friends.","Probably not."],
+    ["N","T","E","I"],"CAMPUS"],
 
-    .machine-eye {
-      width: 90px;
-      height: 90px;
+  ["You have to choose quickly.",
+    ["Gut feeling.","List pros/cons.","Ask someone.","Take the unusual option."],
+    ["N","T","F","N"],"DECISION"],
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+  ["What makes a place memorable?",
+    ["People.","Architecture.","Unexpected events.","Quiet atmosphere."],
+    ["E","N","N","I"],"PLACE"],
 
-      margin-bottom: 35px;
+  ["Your ideal teammate:",
+    ["Reliable.","Creative.","Social.","Analytical."],
+    ["C","N","E","T"],"TEAM"],
 
-      border: 1px solid #65675b;
+  ["You notice a pattern nobody else noticed.",
+    ["Mention it.","Test it.","Keep observing.","Build a theory."],
+    ["E","T","I","N"],"PATTERNS"],
 
-      color: #9a9c8b;
+  ["How do you react to routine?",
+    ["It helps.","It suffocates.","I modify it.","I forget it exists."],
+    ["C","N","N","I"],"ROUTINE"],
 
-      font-family: monospace;
-      font-size: 42px;
+  ["Your ideal campus day:",
+    ["Productive.","Exploratory.","Social.","Quiet and intellectual."],
+    ["C","N","E","I"],"CAMPUS"],
 
-      box-shadow:
-        inset 0 0 30px rgba(0,0,0,.35);
-    }
+  ["A strange idea appears.",
+    ["Reject it.","Explore it.","Explain it.","Tell someone."],
+    ["C","N","T","E"],"IDEAS"],
 
-    .stamp {
-      display: inline-block;
+  ["Someone challenges your identity.",
+    ["Defend it.","Question myself.","Laugh.","Ask what they mean."],
+    ["T","I","E","F"],"IDENTITY"],
 
-      padding: 8px 13px;
+  ["Choose a fictional role.",
+    ["Commander.","Scholar.","Explorer.","Mediator."],
+    ["E","T","N","F"],"ROLE"],
 
-      border: 1px solid #77796b;
+  ["The machine gives you an unexplained result.",
+    ["Trust the system.","Demand evidence.","Investigate.","Make a joke."],
+    ["C","T","N","E"],"MACHINE"]
+];
 
-      color: #929382;
 
-      font-family: "Courier New", monospace;
-      font-size: 10px;
-      letter-spacing: 3px;
+/* ============================================================
+   36 FIXED ARCHETYPES
+   ============================================================ */
 
-      text-transform: uppercase;
-    }
+const ARCHETYPES = [
+["DER ENTDECKER","VP-01 / EXPLORATOR","Novelty is your natural habitat.",
+[.94,.42,.72,.58,.82,.88,.74,.79,.68,.55,.91]],
 
-    #home h1 {
-      max-width: 900px;
+["DER STRATEGE","VP-02 / STRATEGUS","You turn uncertainty into structure.",
+[.78,.95,.43,.62,.35,.91,.48,.94,.31,.83,.71]],
 
-      margin: 28px 0;
+["DER GELEHRTE","VP-03 / SCHOLARIS","You would like to understand the mechanism.",
+[.97,.74,.38,.60,.39,.86,.56,.98,.42,.91,.96]],
 
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(48px, 9vw, 105px);
-      line-height: .87;
-      letter-spacing: -5px;
+["DER DIPLOMAT","VP-04 / MEDIATOR","You notice the social temperature before the room does.",
+[.69,.58,.72,.96,.46,.52,.93,.62,.29,.35,.78]],
 
-      text-transform: uppercase;
-    }
+["DER ORGANISATOR","VP-05 / ORDINATOR","Order appears to have become a personal hobby.",
+[.48,.98,.41,.69,.30,.86,.57,.67,.35,.74,.44]],
 
-    #home h1 em {
-      color: #858a78;
-      font-style: normal;
-    }
+["DER REBELL","VP-06 / CONTRARIUS","You regard obvious instructions as a starting point.",
+[.86,.47,.81,.52,.79,.94,.63,.69,.72,.71,.87]],
 
-    .lead {
-      max-width: 690px;
+["DER BEOBACHTER","VP-07 / OBSERVATOR","You collect patterns before making your move.",
+[.83,.66,.28,.70,.38,.92,.81,.91,.88,.77,.84]],
 
-      color: #aaa995;
+["DER NACHTDENKER","VP-08 / NOCTURNUS","Normal operating hours are merely a suggestion.",
+[.91,.62,.45,.66,.71,.87,.58,.94,.79,.72,.91]],
 
-      font-size: 18px;
-      line-height: 1.7;
-    }
+["DER VISIONÄR","VP-09 / FUTURUS","You see the next version before the current one is finished.",
+[.98,.55,.64,.59,.73,.91,.65,.96,.56,.69,.99]],
 
-    .notice {
-      max-width: 720px;
+["DER KONSTRUKTEUR","VP-10 / FABRICATOR","Ideas become more interesting when they can be built.",
+[.81,.88,.53,.57,.49,.90,.49,.88,.43,.81,.76]],
 
-      margin: 35px 0;
-      padding: 20px;
+["DER VERMITTLER","VP-11 / CONCORDIA","You naturally search for the bridge between people.",
+[.65,.57,.67,.98,.41,.54,.96,.58,.34,.31,.73]],
 
-      border-left: 4px solid var(--green);
+["DER IMPROVISATOR","VP-12 / AD-LIBITUM","You perform suspiciously well without a plan.",
+[.79,.51,.86,.63,.77,.78,.71,.73,.41,.49,.88]],
 
-      background: rgba(0,0,0,.22);
+["DER ANALYST","VP-13 / ANALYTICUS","Your instinct is to decompose the problem.",
+[.86,.91,.37,.51,.34,.90,.44,.99,.54,.88,.82]],
 
-      color: #aaa995;
+["DER ABENTEURER","VP-14 / ADVENTURUS","A predictable weekend sounds like an administrative error.",
+[.81,.39,.91,.54,.91,.89,.66,.68,.36,.43,.89]],
 
-      font-family: "Courier New", monospace;
-      font-size: 12px;
-      line-height: 1.7;
-    }
+["DER IDEALIST","VP-15 / IDEALIS","You measure decisions against an internal standard.",
+[.89,.63,.51,.88,.55,.80,.87,.78,.61,.25,.94]],
 
-    .notice b {
-      color: #d2ccb7;
-    }
+["DER SKEPTIKER","VP-16 / CRITICUS","Your default response to certainty is: prove it.",
+[.83,.78,.36,.44,.31,.88,.42,.95,.76,.86,.78]],
 
-    .auth-panel {
-      margin: 25px 0;
+["DER KOMMUNIKATOR","VP-17 / ORATOR","Conversation is both tool and playground.",
+[.66,.54,.93,.76,.58,.62,.92,.65,.21,.29,.71]],
 
-      color: #8d927e;
+["DER PERFEKTIONIST","VP-18 / PERFECTUS","You noticed the flaw nobody asked about.",
+[.72,.99,.39,.55,.37,.84,.54,.83,.68,.79,.64]],
 
-      font-family: monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-    }
+["DER NOMADE","VP-19 / VAGABUND","You become restless when the map stops changing.",
+[.88,.34,.82,.55,.84,.95,.59,.71,.70,.48,.93]],
 
-    .name-box {
-      max-width: 520px;
+["DER PRAGMATIKER","VP-20 / PRACTICUS","Useful beats impressive.",
+[.52,.88,.61,.57,.43,.83,.52,.72,.39,.72,.55]],
 
-      margin: 28px 0;
-    }
+["DER TRÄUMER","VP-21 / SOMNIATOR","Reality is acceptable; imagination is better.",
+[.96,.43,.48,.74,.67,.83,.79,.89,.82,.19,.97]],
 
-    .name-box label {
-      display: block;
+["DER UNTERNEHMER","VP-22 / INITIATOR","You see opportunities where other people see paperwork.",
+[.78,.79,.84,.57,.68,.93,.67,.81,.28,.63,.83]],
 
-      margin-bottom: 9px;
+["DER MENTOR","VP-23 / MAGISTER","You instinctively turn experience into guidance.",
+[.67,.72,.54,.93,.38,.65,.98,.73,.74,.30,.79]],
 
-      color: #858778;
+["DER TAKTIKER","VP-24 / TACTICUS","You think three moves ahead, preferably quietly.",
+[.74,.89,.46,.49,.34,.94,.51,.92,.72,.82,.69]],
 
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
+["DER PHILOSOPH","VP-25 / PHILOSOPHUS","You have questions about the question.",
+[.99,.52,.31,.66,.44,.92,.63,.99,.95,.88,.98]],
 
-    .name-box input {
-      width: 100%;
+["DER EXPERIMENTATOR","VP-26 / EXPERIMENTUM","You learn by trying the thing.",
+[.93,.61,.73,.55,.81,.87,.62,.86,.51,.56,.94]],
 
-      padding: 15px;
+["DER EINZELGÄNGER","VP-27 / SOLITARIUS","You are perfectly capable of enjoying your own company.",
+[.79,.64,.22,.49,.35,.97,.62,.87,.97,.73,.83]],
 
-      border: 1px solid #66685c;
-      outline: none;
+["DER NETZWERKER","VP-28 / CONNECTOR","You treat the campus like a graph of people.",
+[.61,.53,.97,.78,.55,.64,.99,.67,.12,.24,.69]],
 
-      background: #1d1f1a;
-      color: var(--paper);
+["DER TRADITIONALIST","VP-29 / TRADITIO","A proven system deserves a fair hearing.",
+[.42,.91,.47,.72,.22,.68,.59,.61,.38,.72,.35]],
 
-      font-size: 14px;
-    }
+["DER OPTIMIST","VP-30 / OPTIMUS","Your default forecast is suspiciously positive.",
+[.69,.58,.78,.87,.63,.71,.89,.61,.23,.22,.76]],
 
-    .name-box input:focus {
-      border-color: #9b9d8a;
-    }
+["DER KRITIKER","VP-31 / CENSOR","You see the weak assumption in the room.",
+[.81,.82,.34,.39,.28,.86,.45,.96,.83,.91,.73]],
 
-    .consent-row {
-      display: flex;
-      gap: 10px;
+["DER KURATOR","VP-32 / CURATOR","You collect good things and arrange them into meaning.",
+[.88,.71,.46,.73,.46,.82,.76,.88,.79,.48,.86]],
 
-      max-width: 720px;
+["DER PROVOKATEUR","VP-33 / PROVOCATOR","You occasionally improve a discussion by making it worse first.",
+[.82,.45,.88,.43,.73,.95,.57,.79,.46,.76,.91]],
 
-      color: #888a7d;
+["DER ARCHITEKT","VP-34 / ARCHITECTUS","You prefer systems that survive their creator.",
+[.84,.94,.44,.51,.31,.96,.47,.94,.57,.86,.77]],
 
-      font-family: monospace;
-      font-size: 10px;
-      line-height: 1.6;
-    }
+["DER CHAOSMEISTER","VP-35 / CHAOTICUS","Somehow the disorder keeps producing results.",
+[.75,.29,.87,.61,.88,.82,.70,.76,.40,.38,.90]],
 
-    .consent-row input {
-      margin-top: 3px;
-    }
+["DER NAVIGATOR","VP-36 / NAVIGATOR","You adapt the route without losing the destination.",
+[.77,.78,.71,.69,.66,.90,.73,.82,.45,.59,.84]]
+];
 
-    .primary,
-    .secondary {
-      padding: 14px 20px;
 
-      border: 1px solid #77786c;
+/* ============================================================
+   MACHINE DATA
+   ============================================================ */
 
-      font-family: "Courier New", monospace;
-      font-size: 11px;
-      font-weight: bold;
-      letter-spacing: 1px;
+const KEY_VECTOR = {
+  O:[1,0,0,0,0,.35,.15,.70,0,0,1],
+  C:[0,1,0,0,0,.25,0,.45,0,0,0],
+  E:[0,0,1,.20,0,0,.75,.10,-1,0,.10],
+  A:[0,0,0,1,-.10,0,.90,0,0,-.45,.15],
+  N:[.35,0,.10,-.10,1,.15,.15,.30,0,.05,.55],
+  I:[0,0,-1,0,0,.55,.35,.45,1,0,.20],
+  T:[0,0,0,-.35,0,.25,-.20,.90,0,1,.30],
+  F:[0,0,0,.45,0,-.05,.75,.05,0,-1,.20],
+  S:[-.25,.15,0,0,-.10,0,.15,.20,0,0,-1]
+};
 
-      cursor: pointer;
+const DIM_VARIANCE =
+  [.22,.19,.23,.20,.21,.24,.20,.18,.23,.22,.20];
 
-      transition: .15s ease;
-    }
+const RESPONSE_STRENGTH = .075;
 
-    .primary {
-      margin-top: 25px;
 
-      background: var(--paper);
-      color: #161713;
-    }
+/* ============================================================
+   FACTS
+   ============================================================ */
 
-    .primary:hover {
-      background: #f0ead6;
-    }
+const FACTS = [
+  ["MACHINE OBSERVATION",
+   "Your answer pattern contains a high curiosity signal. The machine has filed this under: potentially troublesome."],
 
-    .secondary {
-      background: transparent;
-      color: var(--paper);
-    }
+  ["ARCHIVAL NOTE",
+   "You selected an answer associated with novelty. Bureaucracy has been notified."],
 
-    .secondary:hover {
-      background: rgba(255,255,255,.06);
-    }
+  ["CAMPUS INTELLIGENCE",
+   "SJT / Amazon was treated as a campus-vibe variable, not as universal psychological truth."],
 
-    #home small {
-      display: block;
+  ["MATHEMATICAL FOOTNOTE",
+   "The classifier compares you against every fixed archetype rather than stopping at the first plausible match."],
 
-      margin-top: 18px;
+  ["TURING FILE",
+   "The interface uses tape, symbols and state-machine ideas as a visual metaphor. The personality model itself is statistical."],
 
-      color: #65675c;
+  ["JUNG FILE",
+   "The Jung-inspired layer represents continuous tendencies rather than putting a person into one permanent box."],
 
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 2px;
-    }
+  ["STATISTICAL NOTICE",
+   "A match percentage is a model similarity score, not a probability that the archetype is objectively who you are."],
 
-    /* =========================================================
-       QUIZ
-       ========================================================= */
+  ["CLASSIFIED",
+   "The machine refuses to explain why it finds your browser-tab count psychologically significant."],
 
-    #quiz {
-      color: var(--paper);
-    }
+  ["AKTENNOTIZ",
+   "You have successfully participated in an unnecessarily dramatic questionnaire."],
 
-    .meta {
-      display: flex;
-      justify-content: space-between;
+  ["CAMPUS REPORT",
+   "Your classification is fictional. Your procrastination, if any, remains outside the jurisdiction of this machine."],
 
-      color: #858778;
+  ["RANDOM MEMORANDUM",
+   "Somewhere, a spreadsheet is proud of you."],
 
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
+  ["ARCHIVE",
+   "The result was generated locally in your browser."],
 
-    .tape {
-      height: 7px;
+  ["NOTICE",
+   "The 36 characters are fixed. Your answers determine which one fits best."],
 
-      margin: 12px 0 55px;
+  ["ERROR 404",
+   "Your childhood password was not requested. Please enjoy this rare victory."],
 
-      border: 1px solid #515349;
+  ["OFFICIAL-SOUNDING FACT",
+   "The more seriously the interface looks, the more suspicious you should be of the joke."],
 
-      background: #10110e;
-    }
+  ["FIELD NOTE",
+   "If three friends get three different archetypes, congratulations: the system has created an argument."],
 
-    .tape i {
-      display: block;
+  ["NIGHT SHIFT",
+   "The machine has no opinion on whether 2:00 AM is an acceptable time to start studying."],
 
-      width: 0;
-      height: 100%;
+  ["FINAL NOTICE",
+   "Your classification may be wrong. This is intentional humility, not a software bug."]
+];
 
-      background: var(--green);
 
-      transition: width .2s ease;
-    }
+/* ============================================================
+   STATE
+   ============================================================ */
 
-    .terminal {
-      position: relative;
-
-      padding: 32px;
-
-      border: 1px solid #66685c;
-
-      background:
-        repeating-linear-gradient(
-          0deg,
-          rgba(255,255,255,.012) 0px,
-          rgba(255,255,255,.012) 1px,
-          transparent 1px,
-          transparent 5px
-        ),
-        #20221c;
-
-      box-shadow:
-        inset 0 0 50px rgba(0,0,0,.25),
-        0 20px 70px rgba(0,0,0,.25);
-    }
+const state = {
+  name: "",
+  i: 0,
+  profile: new Array(11).fill(.5),
+  answers: [],
+  answerTimes: [],
+  best: null,
+  ranking: [],
+  match: 0,
+  confidence: 0,
+  factIndex: 0,
+  startedAt: null
+};
 
-    .terminal-top {
-      display: flex;
-      justify-content: space-between;
 
-      padding-bottom: 15px;
-      margin-bottom: 35px;
+/* ============================================================
+   SHORT DOM HELPER
+   ============================================================ */
 
-      border-bottom: 1px dashed #5e6055;
+function $(id) {
+  return document.getElementById(id);
+}
 
-      color: #7d8072;
 
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 1px;
-    }
+/* ============================================================
+   SCREEN SWITCHING
+   ============================================================ */
 
-    #domain {
-      color: #9b9d8a;
+function show(id) {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
 
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 3px;
-    }
+  const target = $(id);
 
-    #question {
-      max-width: 850px;
+  if (target) {
+    target.classList.add("active");
+    window.scrollTo(0,0);
+  }
+}
 
-      margin: 22px 0;
 
-      color: #e0d9c4;
+/* ============================================================
+   START
+   ============================================================ */
 
-      font-size: clamp(28px, 5vw, 55px);
-      line-height: 1;
-      font-weight: normal;
-    }
+function beginMachine() {
 
-    .micro-prompt {
-      margin-bottom: 28px;
+  const nameInput = $("userName");
 
-      color: #77796e;
+  state.name =
+    nameInput && nameInput.value.trim()
+      ? nameInput.value.trim()
+      : "UNKNOWN SUBJECT";
 
-      font-family: monospace;
-      font-size: 11px;
-    }
+  state.i = 0;
+  state.answers = [];
+  state.answerTimes = [];
+  state.profile = new Array(11).fill(.5);
+  state.startedAt = Date.now();
 
-    #options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+  localStorage.removeItem("vp_progress");
 
-    .option {
-      min-height: 70px;
+  if ($("resultName")) {
+    $("resultName").textContent = state.name;
+  }
 
-      padding: 18px;
+  if ($("streak")) {
+    $("streak").textContent = "CHAIN 0";
+  }
 
-      border: 1px solid #5e6056;
+  show("quiz");
 
-      background: #292b25;
-      color: #cbc5b2;
+  renderQuestion();
+}
 
-      text-align: left;
 
-      font-family: "Courier New", monospace;
-      font-size: 12px;
+/* ============================================================
+   QUESTION RENDERER
+   ============================================================ */
 
-      cursor: pointer;
+function renderQuestion() {
 
-      transition: .12s ease;
-    }
+  if (state.i >= QUESTIONS.length) {
+    classify();
+    return;
+  }
 
-    .option:hover {
-      border-color: #a1a38e;
+  const q = QUESTIONS[state.i];
 
-      background: #33352e;
+  if ($("progress")) {
+    $("progress").textContent =
+      `INPUT ${String(state.i + 1).padStart(2,"0")} / ${QUESTIONS.length}`;
+  }
 
-      transform: translateX(2px);
-    }
+  if ($("progressText")) {
+    $("progressText").textContent =
+      `QUESTION ${state.i + 1} OF ${QUESTIONS.length}`;
+  }
 
-    .question-foot {
-      display: flex;
-      justify-content: space-between;
+  if ($("progressPct")) {
+    $("progressPct").textContent =
+      `${Math.round(state.i / QUESTIONS.length * 100)}%`;
+  }
 
-      margin-top: 30px;
+  if ($("state")) {
+    $("state").textContent = `STATE q${state.i}`;
+  }
 
-      color: #696b61;
+  if ($("domain")) {
+    $("domain").textContent =
+      `${q[3]} // INPUT SYMBOL`;
+  }
 
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 2px;
-    }
+  if ($("question")) {
+    $("question").textContent = q[0];
+  }
 
-    .machine-note,
-    .micro-reveal {
-      margin-top: 16px;
+  if ($("machineNote")) {
+    $("machineNote").textContent =
+      "THE MACHINE RECORDS A SYMBOL. IT DOES NOT RECORD YOUR NAME.";
+  }
 
-      color: #67695e;
+  if ($("tape")) {
+    $("tape").style.width =
+      `${((state.i + 1) / QUESTIONS.length) * 100}%`;
+  }
 
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 1px;
-    }
+  const options = $("options");
 
-    /* =========================================================
-       RESULT
-       ========================================================= */
+  if (!options) return;
 
-    #result {
-      color: var(--paper);
-    }
+  options.innerHTML = "";
 
-    .hero-result {
-      padding: 55px 0;
+  q[1].forEach((text,index) => {
 
-      border-bottom: 1px solid #55574d;
-    }
+    const button = document.createElement("button");
 
-    .hero-result small,
-    .panel > small {
-      color: #77796c;
+    button.type = "button";
+    button.className = "option";
 
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 3px;
-    }
+    button.textContent =
+      `${String.fromCharCode(65 + index)}  ${text}`;
 
-    .subject-name {
-      margin: 8px 0 50px;
+    button.addEventListener("click", () => {
+      answer(index,q[2][index]);
+    });
 
-      color: #a1a391;
+    options.appendChild(button);
+  });
+}
 
-      font-family: monospace;
-      font-size: 13px;
-    }
 
-    #archetype {
-      margin: 18px 0 4px;
+/* ============================================================
+   RECORD ANSWER
+   ============================================================ */
 
-      color: #e2dbc7;
+function answer(optionIndex,key) {
 
-      font-size: clamp(44px, 8vw, 92px);
-      line-height: .9;
-      font-weight: normal;
-      letter-spacing: -4px;
-    }
+  const now = Date.now();
 
-    #archetypeCode {
-      color: #77796d;
+  state.answerTimes.push(now);
+  state.answers.push(optionIndex);
 
-      font-family: monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-    }
+  const vector = vecForResponse(key,optionIndex);
 
-    .score {
-      margin: 40px 0 20px;
+  state.profile = state.profile.map((value,index) => {
 
-      font-family: monospace;
-    }
+    const evidence =
+      vector[index] * RESPONSE_STRENGTH;
 
-    #matchScore {
-      font-size: clamp(48px, 8vw, 82px);
-      color: #9ca58a;
-    }
+    return Math.max(
+      .03,
+      Math.min(.97,value + evidence)
+    );
+  });
 
-    .score small {
-      color: #77796c;
-    }
+  state.i++;
 
-    #description {
-      max-width: 680px;
+  localStorage.setItem(
+    "vp_progress",
+    JSON.stringify({
+      i: state.i,
+      answers: state.answers,
+      name: state.name
+    })
+  );
 
-      color: #aaa995;
+  if ($("streak")) {
+    $("streak").textContent =
+      `CHAIN ${state.i}`;
+  }
 
-      font-size: 18px;
-      line-height: 1.7;
-    }
+  if (state.i < QUESTIONS.length) {
+    renderQuestion();
+  } else {
+    classify();
+  }
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
 
-      margin-top: 20px;
-    }
+/* ============================================================
+   RESPONSE VECTOR
+   ============================================================ */
 
-    .panel {
-      margin-top: 15px;
-      padding: 24px;
+function vecForResponse(key,position) {
 
-      border: 1px solid #57594e;
+  const base =
+    KEY_VECTOR[key] || KEY_VECTOR.O;
 
-      background: rgba(0,0,0,.16);
-    }
+  const multiplier =
+    [1,.96,1.04,.98][position] || 1;
 
-    .bar {
-      margin-top: 18px;
-    }
+  return base.map(value => value * multiplier);
+}
 
-    .bar-label {
-      display: flex;
-      justify-content: space-between;
 
-      color: #a7a695;
+/* ============================================================
+   NORMALIZE PROFILE
+   ============================================================ */
 
-      font-family: monospace;
-      font-size: 10px;
-    }
+function normalizeProfile() {
 
-    .bar-track {
-      height: 5px;
+  return state.profile.map(value => {
 
-      margin-top: 7px;
+    const x = (value - .5) * 2;
 
-      background: #11120f;
-    }
+    const logistic =
+      1 / (1 + Math.exp(-1.55 * x));
 
-    .bar-fill {
-      height: 100%;
+    return Math.max(
+      .03,
+      Math.min(.97,logistic)
+    );
+  });
+}
 
-      background: var(--green);
-    }
 
-    .rank {
-      display: grid;
-      grid-template-columns: 45px 1fr 70px;
+/* ============================================================
+   DISTANCE
+   ============================================================ */
 
-      padding: 13px 0;
+function mahalanobis(a,b) {
 
-      border-bottom: 1px dashed #4e5046;
+  let total = 0;
 
-      color: #a8a796;
+  for (let i=0;i<a.length;i++) {
 
-      font-family: monospace;
-      font-size: 11px;
-    }
+    const z =
+      (a[i] - b[i]) /
+      DIM_VARIANCE[i];
 
-    .rank b {
-      color: #d0c9b6;
-      font-weight: normal;
-    }
+    total += z * z;
+  }
 
-    .fact {
-      margin-top: 20px;
-      padding: 25px;
+  return Math.sqrt(total / a.length);
+}
 
-      border: 1px solid #5e6054;
 
-      background: #24261f;
-    }
+/* ============================================================
+   COSINE
+   ============================================================ */
 
-    .fact-label {
-      color: #969985;
+function cosine(a,b) {
 
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 3px;
-    }
+  let dot = 0;
+  let aa = 0;
+  let bb = 0;
 
-    .fact p {
-      color: #b4af9e;
+  for (let i=0;i<a.length;i++) {
 
-      line-height: 1.7;
-    }
+    const x = a[i] - .5;
+    const y = b[i] - .5;
 
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+    dot += x * y;
+    aa += x * x;
+    bb += y * y;
+  }
 
-      margin-top: 25px;
-    }
+  if (!aa || !bb) return 0;
 
-    .method-note {
-      margin-top: 30px;
+  return dot /
+    (Math.sqrt(aa) * Math.sqrt(bb));
+}
 
-      color: #686a60;
 
-      font-family: monospace;
-      font-size: 10px;
-      line-height: 1.6;
-    }
+/* ============================================================
+   PEARSON
+   ============================================================ */
 
-    .save-status,
-    .share-status {
-      margin-top: 15px;
+function pearson(a,b) {
 
-      color: #89917a;
+  const am =
+    a.reduce((s,v)=>s+v,0) / a.length;
 
-      font-family: monospace;
-      font-size: 10px;
-    }
+  const bm =
+    b.reduce((s,v)=>s+v,0) / b.length;
 
-    .share-box {
-      display: none;
+  let numerator = 0;
+  let da = 0;
+  let db = 0;
 
-      margin-top: 25px;
-    }
+  for (let i=0;i<a.length;i++) {
 
-    .share-box label {
-      display: block;
+    const x = a[i] - am;
+    const y = b[i] - bm;
 
-      margin-bottom: 7px;
+    numerator += x*y;
+    da += x*x;
+    db += y*y;
+  }
 
-      color: #77796c;
+  if (!da || !db) return 0;
 
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 2px;
-    }
+  return numerator /
+    Math.sqrt(da * db);
+}
 
-    .share-box input {
-      width: 100%;
 
-      padding: 13px;
+/* ============================================================
+   COMPATIBILITY
+   ============================================================ */
 
-      border: 1px solid #5e6056;
+function rawCompatibility(a,b) {
 
-      background: #151612;
-      color: #aaa995;
-    }
+  const distance =
+    mahalanobis(a,b);
 
-    .privacy {
-      margin-top: 40px;
-      padding: 22px;
+  const cosineScore =
+    (cosine(a,b) + 1) / 2;
 
-      border: 1px solid #45473e;
+  const pearsonScore =
+    (pearson(a,b) + 1) / 2;
 
-      color: #77796d;
+  return (
+    .56 * Math.exp(-distance / 2.25) +
+    .27 * cosineScore +
+    .17 * pearsonScore
+  );
+}
 
-      font-family: monospace;
-      font-size: 10px;
-      line-height: 1.6;
-    }
 
-    .privacy b {
-      color: #999b8a;
-    }
+/* ============================================================
+   SOFTMAX
+   ============================================================ */
 
-    /* =========================================================
-       MOBILE
-       ========================================================= */
+function softmax(scores,temperature=.075) {
 
-    @media(max-width:700px) {
+  const maximum =
+    Math.max(...scores);
 
-      main {
-        width: min(100% - 22px, 1050px);
-      }
+  const exponentials =
+    scores.map(score =>
+      Math.exp(
+        (score - maximum) /
+        temperature
+      )
+    );
 
-      header span {
-        display: none;
-      }
+  const total =
+    exponentials.reduce(
+      (a,b)=>a+b,
+      0
+    );
 
-      .screen {
-        padding-top: 40px;
-      }
+  return exponentials.map(
+    value => value / total
+  );
+}
 
-      #home h1 {
-        letter-spacing: -3px;
-      }
 
-      .terminal {
-        padding: 20px;
-      }
+/* ============================================================
+   CLASSIFY
+   ============================================================ */
 
-      #options {
-        grid-template-columns: 1fr;
-      }
+function classify() {
 
-      .grid {
-        grid-template-columns: 1fr;
-      }
+  state.profile =
+    normalizeProfile();
 
-      .login-machine {
-        padding: 28px;
-      }
+  const scored =
+    ARCHETYPES
+      .map((archetype,index) => ({
+        index,
+        a: archetype,
+        raw: rawCompatibility(
+          state.profile,
+          archetype[3]
+        )
+      }))
+      .sort(
+        (a,b) => b.raw - a.raw
+      );
 
-      .machine-title {
-        letter-spacing: -2px;
-      }
+  const probabilities =
+    softmax(
+      scored.map(x => x.raw)
+    );
 
-      #archetype {
-        letter-spacing: -2px;
-      }
+  scored.forEach(
+    (item,index) => {
+      item.p = probabilities[index];
     }
-  </style>
-</head>
-
-<body>
-
-<!-- =========================================================
-     AUTHENTICATION WALL
-     ========================================================= -->
-
-<div id="login-screen">
-
-  <div class="login-machine">
-
-    <div class="machine-label">
-      CLASSIFICATION MACHINE / ACCESS CONTROL
-    </div>
-
-    <div class="machine-title">
-      IDENTIFICATION<br>
-      REQUIRED
-    </div>
-
-    <p>
-      The machine requires an authenticated identity
-      before the sequence can begin.
-    </p>
-
-    <button id="googleLogin">
-      CONTINUE WITH GOOGLE
-    </button>
-
-    <div
-      class="login-status"
-      id="authStatus"
-    >
-      GOOGLE AUTHENTICATION REQUIRED
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- =========================================================
-     APPLICATION
-     ========================================================= -->
-
-<div id="application">
-
-  <div class="grain"></div>
-
-  <main>
-
-    <!-- HEADER -->
-
-    <header>
-
-      <div>
-        <b>CLASSIFICATION MACHINE</b>
-        <span>// PERSONNEL FILE</span>
-      </div>
-
-      <div class="online">
-        <i></i>
-        MACHINE ONLINE
-      </div>
-
-    </header>
-
-
-    <!-- =====================================================
-         HOME
-         ===================================================== -->
-
-    <section
-      id="home"
-      class="screen active"
-    >
-
-      <div class="machine-eye">
-        ◉
-      </div>
-
-      <div class="stamp">
-        FILE 0036 / PRIVATE EXPERIMENT
-      </div>
-
-      <h1>
-        THE MACHINE<br>
-        <em>HAS A THEORY</em><br>
-        ABOUT YOU.
-      </h1>
-
-      <p class="lead">
-        A computational personality experiment
-        built around pattern recognition,
-        symbolic inputs and a fixed library
-        of fictional character profiles.
-      </p>
-
-      <div class="notice">
-
-        <b>NOTICE TO SUBJECT</b>
-
-        <br><br>
-
-        This apparatus is entertainment/research
-        software and is not a clinical diagnosis.
-
-        <br><br>
-
-        Classification occurs locally in the browser.
-        Research participation is optional.
-
-        <br><br>
-
-        AUTHENTICATION REQUIRED.
-
-      </div>
-
-
-      <!-- USER -->
-
-      <div
-        class="auth-panel"
-        id="authPanel"
-      >
-        AUTHENTICATED SUBJECT
-      </div>
-
-
-      <!-- NAME -->
-
-      <div class="name-box">
-
-        <label for="userName">
-          SUBJECT NAME
-        </label>
-
-        <input
-          id="userName"
-          maxlength="40"
-          autocomplete="name"
-          placeholder="Enter your name"
-        >
-
-      </div>
-
-
-      <!-- CONSENT -->
-
-      <label class="consent-row">
-
-        <input
-          type="checkbox"
-          id="dataConsent"
-        >
+  );
 
-        <span>
-          I agree to send my answers and personality
-          profile for research and model improvement.
-        </span>
+  state.ranking = scored;
+  state.best = scored[0];
 
-      </label>
+  const mean =
+    scored.reduce(
+      (sum,item)=>sum + item.raw,
+      0
+    ) / scored.length;
 
+  const spread =
+    Math.sqrt(
+      scored.reduce(
+        (sum,item)=>
+          sum + Math.pow(item.raw - mean,2),
+        0
+      ) / scored.length
+    ) || .001;
 
-      <button
-        class="primary"
-        id="begin"
-      >
-        BEGIN SEQUENCE →
-      </button>
+  const relative =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        .5 +
+        .20 *
+        (state.best.raw - mean) /
+        spread
+      )
+    );
 
+  state.match = relative;
 
-      <small>
-        36 ARCHETYPES · 36 INPUTS · LOCAL CLASSIFICATION
-      </small>
+  const margin =
+    scored[0].p - scored[1].p;
 
-    </section>
+  state.confidence =
+    Math.min(
+      1,
+      .45 + margin * 2.2
+    );
 
+  renderResult();
 
-    <!-- =====================================================
-         QUIZ
-         ===================================================== -->
+  saveLocalResult();
 
-    <section
-      id="quiz"
-      class="screen"
-    >
+  submitResearchData();
 
-      <div class="meta">
+  show("result");
+}
 
-        <span id="progress">
-          INPUT 01 / 36
-        </span>
 
-        <span id="state">
-          STATE q0
-        </span>
+/* ============================================================
+   RESULT
+   ============================================================ */
 
-      </div>
+function renderResult() {
 
+  const archetype =
+    state.best.a;
 
-      <div class="tape">
-        <i id="tape"></i>
-      </div>
+  if ($("resultName")) {
+    $("resultName").textContent =
+      state.name;
+  }
 
+  if ($("archetype")) {
+    $("archetype").textContent =
+      archetype[0];
+  }
 
-      <div class="terminal">
+  if ($("archetypeCode")) {
+    $("archetypeCode").textContent =
+      archetype[1];
+  }
 
-        <div class="terminal-top">
+  if ($("description")) {
+    $("description").textContent =
+      archetype[2];
+  }
 
-          <span>
-            SYMBOLIC PROCESS //
-            READ → WRITE → MOVE
-          </span>
+  if ($("matchScore")) {
+    $("matchScore").textContent =
+      (state.match * 100).toFixed(1);
+  }
 
-          <span id="streak">
-            CHAIN 0
-          </span>
+  renderBars(
+    "jungStats",
+    [
+      ["INTROVERSION",1-state.profile[2]],
+      ["EXTRAVERSION",state.profile[2]],
+      ["THINKING",state.profile[9]],
+      ["FEELING",1-state.profile[9]],
+      ["SENSATION",1-state.profile[10]],
+      ["INTUITION",state.profile[10]]
+    ]
+  );
 
-        </div>
+  renderBars(
+    "bigFive",
+    [
+      ["OPENNESS",state.profile[0]],
+      ["CONSCIENTIOUSNESS",state.profile[1]],
+      ["EXTRAVERSION",state.profile[2]],
+      ["AGREEABLENESS",state.profile[3]],
+      ["NEUROTICISM",state.profile[4]]
+    ]
+  );
 
+  renderRanking();
 
-        <label id="domain">
-          INPUT DOMAIN
-        </label>
+  renderCampus();
 
+  showFact();
+}
 
-        <h2 id="question"></h2>
 
+/* ============================================================
+   BARS
+   ============================================================ */
 
-        <div
-          class="micro-prompt"
-          id="microPrompt"
-        >
-          Select the response closest to your
-          first instinct.
-        </div>
+function renderBars(id,data) {
 
+  const container = $(id);
 
-        <div id="options"></div>
+  if (!container) return;
 
+  container.innerHTML = "";
 
-        <div class="question-foot">
+  data.forEach(([label,value]) => {
 
-          <span id="answerHint">
-            NO WRONG ANSWER
-          </span>
+    const row =
+      document.createElement("div");
 
-          <span id="responseTime">
-            ~10 SEC
-          </span>
+    row.className = "stat";
 
-        </div>
+    const title =
+      document.createElement("div");
 
-      </div>
+    title.className = "stat-label";
 
+    title.innerHTML =
+      `<span>${label}</span>
+       <span>${Math.round(value * 100)}%</span>`;
 
-      <div
-        class="machine-note"
-        id="machineNote"
-      >
-        THE MACHINE RECORDS A SYMBOL.
-      </div>
+    const bar =
+      document.createElement("div");
 
+    bar.className = "stat-bar";
 
-      <div
-        class="micro-reveal"
-        id="microReveal"
-      ></div>
+    const fill =
+      document.createElement("i");
 
-    </section>
+    fill.style.width =
+      `${Math.round(value * 100)}%`;
 
+    bar.appendChild(fill);
 
-    <!-- =====================================================
-         RESULT
-         ===================================================== -->
+    row.appendChild(title);
+    row.appendChild(bar);
 
-    <section
-      id="result"
-      class="screen"
-    >
+    container.appendChild(row);
+  });
+}
 
-      <div class="stamp">
-        CLASSIFICATION COMPLETE
-      </div>
 
+/* ============================================================
+   RANKING
+   ============================================================ */
 
-      <div class="hero-result">
+function renderRanking() {
 
-        <small>
-          SUBJECT
-        </small>
+  const container =
+    $("ranking");
 
-        <div
-          class="subject-name"
-          id="resultName"
-        ></div>
+  if (!container) return;
 
+  container.innerHTML = "";
 
-        <small>
-          PRIMARY CLASSIFICATION
-        </small>
+  state.ranking
+    .slice(0,7)
+    .forEach((item,index) => {
 
-        <h1 id="archetype"></h1>
+      const row =
+        document.createElement("div");
 
-        <code id="archetypeCode"></code>
+      row.className = "rank";
 
+      const number =
+        document.createElement("span");
 
-        <div class="score">
+      number.textContent =
+        String(index + 1)
+          .padStart(2,"0");
 
-          <span id="matchScore">
-            0
-          </span>
+      const name =
+        document.createElement("b");
 
-          <small>
-            % COMPATIBILITY
-          </small>
+      name.textContent =
+        item.a[0];
 
-        </div>
+      const percentage =
+        document.createElement("span");
 
+      percentage.textContent =
+        `${(item.p * 100).toFixed(1)}%`;
 
-        <p id="description"></p>
+      row.appendChild(number);
+      row.appendChild(name);
+      row.appendChild(percentage);
 
-      </div>
+      container.appendChild(row);
+    });
+}
 
 
-      <!-- PERSONALITY -->
+/* ============================================================
+   CAMPUS SIGNALS
+   ============================================================ */
 
-      <div class="grid">
+function renderCampus() {
 
-        <div class="panel">
+  const container =
+    $("campusStats");
 
-          <small>
-            JUNG-INSPIRED AXES
-          </small>
+  if (!container) return;
 
-          <div id="jungStats"></div>
+  const categories = {
+    CAMPUS: 0,
+    SOCIAL: 0,
+    ACADEMIC: 0,
+    EXPLORATION: 0,
+    GROUP: 0
+  };
 
-        </div>
+  QUESTIONS.forEach((question,index) => {
 
+    const domain = question[3];
 
-        <div class="panel">
+    if (domain in categories) {
 
-          <small>
-            PERSONALITY PROFILE
-          </small>
-
-          <div id="bigFive"></div>
-
-        </div>
-
-      </div>
-
-
-      <!-- RANKING -->
-
-      <div class="panel">
-
-        <small>
-          ARCHETYPE MATCH RANKING
-        </small>
-
-        <div id="ranking"></div>
-
-      </div>
-
-
-      <!-- CAMPUS -->
-
-      <div class="panel">
-
-        <small>
-          CAMPUS SIGNALS
-        </small>
-
-        <div id="campusStats"></div>
-
-      </div>
-
-
-      <!-- FACT -->
-
-      <div class="fact">
-
-        <div
-          class="fact-label"
-          id="factLabel"
-        >
-          MACHINE OBSERVATION
-        </div>
-
-        <p id="fact"></p>
-
-        <button
-          class="secondary"
-          id="nextFact"
-        >
-          ANOTHER RECORD →
-        </button>
-
-      </div>
-
-
-      <!-- ACTIONS -->
-
-      <div class="actions">
-
-        <button
-          class="primary"
-          id="share"
-        >
-          SHARE RESULT
-        </button>
-
-        <button
-          class="secondary"
-          id="shareData"
-        >
-          SEND RESULT TO A FRIEND
-        </button>
-
-        <button
-          class="secondary"
-          id="saveImage"
-        >
-          SAVE RESULT CARD
-        </button>
-
-        <button
-          class="secondary"
-          id="again"
-        >
-          RUN AGAIN
-        </button>
-
-      </div>
-
-
-      <div class="method-note">
-
-        COMPATIBILITY SCORE = relative similarity
-        across the fixed archetype library.
-        It is not a clinical diagnosis or an
-        absolute probability.
-
-      </div>
-
-
-      <div
-        id="saveStatus"
-        class="save-status"
-      ></div>
-
-
-      <!-- SHARE -->
-
-      <div
-        class="share-box"
-        id="shareBox"
-      >
-
-        <label>
-          RESULT LINK
-        </label>
-
-        <input
-          id="shareLink"
-          readonly
-        >
-
-        <button
-          class="secondary"
-          id="copyLink"
-        >
-          COPY LINK
-        </button>
-
-      </div>
-
-
-      <p
-        class="share-status"
-        id="shareStatus"
-      ></p>
-
-
-      <!-- ANONYMOUS RESEARCH -->
-
-      <div class="privacy">
-
-        <b>
-          OPTIONAL ANONYMOUS AGGREGATION
-        </b>
-
-        <p>
-          Help calibrate future versions by sending
-          only an anonymous response fingerprint
-          and classification result.
-          No name, email, phone number or raw
-          free text is sent through this option.
-        </p>
-
-
-        <label>
-
-          <input
-            type="checkbox"
-            id="optin"
-          >
-
-          I voluntarily opt in to anonymous
-          aggregated research.
-
-        </label>
-
-
-        <button
-          class="secondary"
-          id="sendData"
-        >
-          SEND ANONYMOUS RESULT
-        </button>
-
-
-        <small id="sendStatus"></small>
-
-      </div>
-
+      categories[domain] +=
+        state.answers[index] + 1;
+    }
+  });
 
-      <!-- ===================================================
-           CREDIT
-           =================================================== -->
+  const values =
+    Object.entries(categories);
 
-      <div
-        style="
-          margin-top:80px;
-          padding-top:25px;
-          border-top:1px solid #46483f;
-          color:#66685e;
-          font-family:'Courier New',monospace;
-          font-size:9px;
-          letter-spacing:3px;
-          text-align:center;
-        "
-      >
-        MADE BY HELDENMUNT
-      </div>
+  const max =
+    Math.max(
+      ...values.map(x=>x[1]),
+      1
+    );
 
-    </section>
+  renderBars(
+    "campusStats",
+    values.map(
+      ([name,value]) =>
+        [name,value/max]
+    )
+  );
+}
 
-  </main>
 
-</div>
+/* ============================================================
+   FACTS
+   ============================================================ */
 
+function showFact() {
 
-<!-- =========================================================
-     FIREBASE
-     ========================================================= -->
+  const fact =
+    FACTS[state.factIndex % FACTS.length];
 
-<script
-  type="module"
-  src="firebase-app.js"
-></script>
+  if ($("factLabel")) {
+    $("factLabel").textContent =
+      fact[0];
+  }
 
-<script
-  type="module"
-  src="auth-gate.js"
-></script>
+  if ($("fact")) {
+    $("fact").textContent =
+      fact[1];
+  }
+}
 
-<script
-  src="script.js"
-  defer
-></script>
 
-</body>
-</html>
+/* ============================================================
+  
