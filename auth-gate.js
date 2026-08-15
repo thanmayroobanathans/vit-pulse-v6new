@@ -1,40 +1,238 @@
 import {
-  getAuth,
   GoogleAuthProvider,
   signInWithPopup,
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
-  getFirestore,
   doc,
   setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-import { initializeApp } from
-  "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  auth,
+  db
+} from "./firebase-app.js";
 
 
-// =====================================================
-// FIREBASE CONFIG
-// =====================================================
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+const loginScreen = document.getElementById("login-screen");
+const application = document.getElementById("application");
+const googleButton = document.getElementById("googleLogin");
+const authStatus = document.getElementById("authStatus");
 
 
-// =====================================================
-// INITIALIZE FIREBASE
-// =====================================================
+const provider = new GoogleAuthProvider();
 
+provider.setCustomParameters({
+  prompt: "select_account"
+});
+
+
+function showLogin() {
+
+  if (loginScreen) {
+    loginScreen.style.display = "flex";
+  }
+
+  if (application) {
+    application.style.display = "none";
+  }
+}
+
+
+function showApplication(user) {
+
+  if (loginScreen) {
+    loginScreen.style.display = "none";
+  }
+
+  if (application) {
+    application.style.display = "block";
+  }
+
+  window.VP_USER = user;
+
+  const nameInput = document.getElementById("userName");
+
+  if (
+    nameInput &&
+    !nameInput.value &&
+    user.displayName
+  ) {
+    nameInput.value = user.displayName;
+  }
+
+  if (authStatus) {
+    authStatus.textContent =
+      `AUTHENTICATED // ${user.email || ""}`;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("vitpulse:authenticated", {
+      detail: { user }
+    })
+  );
+}
+
+
+async function loginWithGoogle() {
+
+  if (googleButton) {
+    googleButton.disabled = true;
+    googleButton.textContent = "CONNECTING...";
+  }
+
+  try {
+
+    const result =
+      await signInWithPopup(auth, provider);
+
+    const user = result.user;
+
+    console.log(
+      "Google login successful:",
+      user.displayName,
+      user.email
+    );
+
+
+    await setDoc(
+      doc(db, "participants", user.uid),
+      {
+        uid: user.uid,
+        name: user.displayName || "",
+        email: user.email || "",
+        photoURL: user.photoURL || "",
+        provider: "google",
+        lastLogin: serverTimestamp()
+      },
+      {
+        merge: true
+      }
+    );
+
+
+    showApplication(user);
+
+  } catch (error) {
+
+    console.error("GOOGLE LOGIN ERROR:", error);
+
+    let message = "Google sign-in failed.";
+
+    if (error.code === "auth/unauthorized-domain") {
+
+      message =
+        "This GitHub Pages domain is not authorized in Firebase.";
+
+    } else if (error.code === "auth/popup-blocked") {
+
+      message =
+        "The Google popup was blocked by the browser.";
+
+    } else if (error.code === "auth/popup-closed-by-user") {
+
+      message =
+        "Google sign-in was cancelled.";
+
+    } else if (error.code === "auth/invalid-api-key") {
+
+      message =
+        "Your Firebase API key is incorrect.";
+
+    } else if (error.code === "auth/operation-not-allowed") {
+
+      message =
+        "Google authentication is not enabled in Firebase.";
+
+    } else if (error.code === "auth/network-request-failed") {
+
+      message =
+        "Network error. Check your connection.";
+
+    }
+
+    if (authStatus) {
+      authStatus.textContent = message;
+    }
+
+    alert(message);
+
+  } finally {
+
+    if (googleButton) {
+      googleButton.disabled = false;
+      googleButton.textContent =
+        "CONTINUE WITH GOOGLE";
+    }
+  }
+}
+
+
+if (googleButton) {
+
+  googleButton.addEventListener(
+    "click",
+    loginWithGoogle
+  );
+
+} else {
+
+  console.error(
+    "ERROR: #googleLogin button was not found."
+  );
+}
+
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    if (user) {
+
+      console.log(
+        "AUTHENTICATED:",
+        user.email
+      );
+
+      window.VP_USER = user;
+
+      showApplication(user);
+
+      try {
+
+        await setDoc(
+          doc(db, "participants", user.uid),
+          {
+            uid: user.uid,
+            name: user.displayName || "",
+            email: user.email || "",
+            photoURL: user.photoURL || "",
+            provider: "google",
+            lastLogin: serverTimestamp()
+          },
+          {
+            merge: true
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Firestore profile update failed:",
+          error
+        );
+      }
+
+    } else {
+
+      window.VP_USER = null;
+
+      showLogin();
+    }
+  }
+);
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
