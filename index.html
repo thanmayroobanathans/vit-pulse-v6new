@@ -4,157 +4,77 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <title>Made by heldenmunt — Classification Machine</title>
+  <title>Psychological Classification Machine</title>
 
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* =========================================================
-       TURING-ERA / CODEBREAKING MACHINE UI
-       ========================================================= */
-
-    :root {
-      --paper: #d8d0b8;
-      --paper-dark: #bcb49d;
-      --ink: #171914;
-      --muted: #59594d;
-      --machine: #292b25;
-      --machine-dark: #171914;
-      --line: #777763;
-      --green: #788a67;
-      --red: #7b4136;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background:
-        radial-gradient(
-          circle at center,
-          #34362e 0%,
-          #1d1f1a 55%,
-          #11120f 100%
-        );
-      color: var(--ink);
-      font-family: Georgia, "Times New Roman", serif;
-    }
-
-    button,
-    input {
-      font-family: "Courier New", monospace;
-    }
-
-    /* =========================================================
-       AUTH WALL
-       ========================================================= */
+    /* ================================
+       AUTHENTICATION WALL
+       ================================ */
 
     #login-screen {
       position: fixed;
       inset: 0;
       z-index: 999999;
-
       display: flex;
       align-items: center;
       justify-content: center;
-
       padding: 24px;
-
       background:
-        repeating-linear-gradient(
-          0deg,
-          rgba(255,255,255,.015) 0px,
-          rgba(255,255,255,.015) 1px,
-          transparent 1px,
-          transparent 4px
-        ),
-        radial-gradient(
-          circle at center,
-          #34362d,
-          #161813 70%
-        );
-
-      color: var(--paper);
+        radial-gradient(circle at 50% 40%,
+          #181818 0%,
+          #080808 55%,
+          #000 100%);
+      color: #eee;
     }
 
     .login-machine {
-      width: min(680px, 100%);
-
-      padding: 44px;
-
-      border: 1px solid #66675a;
-
-      background:
-        linear-gradient(
-          rgba(255,255,255,.015),
-          rgba(0,0,0,.08)
-        ),
-        #20221c;
-
+      width: min(620px, 100%);
+      padding: 42px;
+      border: 1px solid #303030;
+      background: #090909;
       box-shadow:
-        0 0 0 8px #11120f,
-        0 0 0 9px #55564b,
-        0 35px 100px rgba(0,0,0,.75);
+        0 0 0 1px #111,
+        0 30px 100px rgba(0,0,0,.75);
     }
 
     .machine-label {
-      margin-bottom: 34px;
-
-      color: #9b9c8b;
-
-      font-family: "Courier New", monospace;
+      color: #b8a99a;
       font-size: 10px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 42px;
+      font-family: monospace;
     }
 
     .machine-title {
-      margin-bottom: 30px;
-
-      font-family: "Courier New", monospace;
-      font-size: clamp(38px, 8vw, 74px);
+      font-family: monospace;
+      font-size: clamp(38px, 8vw, 70px);
       font-weight: 900;
-      line-height: .86;
-      letter-spacing: -4px;
-
-      text-transform: uppercase;
+      line-height: .9;
+      margin-bottom: 30px;
     }
 
     .login-machine p {
-      max-width: 560px;
-
-      color: #a7a695;
-
-      line-height: 1.8;
-      font-size: 15px;
+      color: #888;
+      line-height: 1.7;
+      margin-bottom: 32px;
     }
 
     #googleLogin {
       width: 100%;
-
-      margin-top: 20px;
-      padding: 17px;
-
-      border: 1px solid #858675;
-
-      background: var(--paper);
-      color: #151611;
-
-      font-family: "Courier New", monospace;
-      font-size: 13px;
+      padding: 18px;
+      border: 0;
+      background: #eee;
+      color: #050505;
+      font-family: monospace;
       font-weight: bold;
-      letter-spacing: 2px;
-
+      letter-spacing: 1px;
       cursor: pointer;
-
-      transition: .15s ease;
     }
 
     #googleLogin:hover {
-      background: #eee8d5;
-      transform: translateY(-1px);
+      background: white;
     }
 
     #googleLogin:disabled {
@@ -163,11 +83,9 @@
     }
 
     .login-status {
-      margin-top: 17px;
-
-      color: #77786d;
-
-      font-family: "Courier New", monospace;
+      margin-top: 18px;
+      color: #555;
+      font-family: monospace;
       font-size: 10px;
       letter-spacing: 2px;
       text-align: center;
@@ -181,770 +99,60 @@
       display: block;
     }
 
-    /* =========================================================
-       APPLICATION SHELL
-       ========================================================= */
+    /* ================================
+       EXTRA TURING / ARCHIVAL DETAILS
+       ================================ */
 
-    #application {
-      min-height: 100vh;
-    }
-
-    .grain {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 100;
-
-      opacity: .13;
-
-      background:
-        repeating-linear-gradient(
-          0deg,
-          transparent 0px,
-          transparent 3px,
-          rgba(255,255,255,.035) 4px
-        );
-    }
-
-    main {
-      width: min(1050px, calc(100% - 32px));
-      margin: auto;
-      padding-bottom: 100px;
-    }
-
-    /* =========================================================
-       HEADER
-       ========================================================= */
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      padding: 24px 0;
-
-      border-bottom: 1px solid #55574d;
-
-      color: var(--paper);
-      font-family: "Courier New", monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-    }
-
-    header b {
-      font-size: 15px;
-      letter-spacing: 4px;
-    }
-
-    header span {
-      color: #77796c;
-      margin-left: 10px;
-    }
-
-    .online {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      color: #929683;
-    }
-
-    .online i {
-      width: 7px;
-      height: 7px;
-
-      display: inline-block;
-
-      border-radius: 50%;
-
-      background: var(--green);
-
-      box-shadow: 0 0 8px rgba(120,138,103,.7);
-    }
-
-    /* =========================================================
-       SCREENS
-       ========================================================= */
-
-    .screen {
-      display: none;
-      padding-top: 70px;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    /* =========================================================
-       HOME
-       ========================================================= */
-
-    #home {
-      min-height: 760px;
-
-      color: var(--paper);
-
-      position: relative;
-    }
-
-    .machine-eye {
-      width: 90px;
-      height: 90px;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      margin-bottom: 35px;
-
-      border: 1px solid #65675b;
-
-      color: #9a9c8b;
-
+    .maker {
+      margin-top: 36px;
+      color: #555;
       font-family: monospace;
-      font-size: 42px;
-
-      box-shadow:
-        inset 0 0 30px rgba(0,0,0,.35);
-    }
-
-    .stamp {
-      display: inline-block;
-
-      padding: 8px 13px;
-
-      border: 1px solid #77796b;
-
-      color: #929382;
-
-      font-family: "Courier New", monospace;
       font-size: 10px;
       letter-spacing: 3px;
-
       text-transform: uppercase;
     }
 
-    #home h1 {
-      max-width: 900px;
-
-      margin: 28px 0;
-
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(48px, 9vw, 105px);
-      line-height: .87;
-      letter-spacing: -5px;
-
-      text-transform: uppercase;
-    }
-
-    #home h1 em {
-      color: #858a78;
-      font-style: normal;
-    }
-
-    .lead {
-      max-width: 690px;
-
-      color: #aaa995;
-
-      font-size: 18px;
-      line-height: 1.7;
-    }
-
-    .notice {
-      max-width: 720px;
-
-      margin: 35px 0;
-      padding: 20px;
-
-      border-left: 4px solid var(--green);
-
-      background: rgba(0,0,0,.22);
-
-      color: #aaa995;
-
-      font-family: "Courier New", monospace;
-      font-size: 12px;
-      line-height: 1.7;
-    }
-
-    .notice b {
-      color: #d2ccb7;
+    .machine-subtitle {
+      color: #777;
+      font-family: monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-top: -10px;
+      margin-bottom: 28px;
     }
 
     .auth-panel {
-      margin: 25px 0;
-
-      color: #8d927e;
-
-      font-family: monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-    }
-
-    .name-box {
-      max-width: 520px;
-
-      margin: 28px 0;
-    }
-
-    .name-box label {
-      display: block;
-
-      margin-bottom: 9px;
-
-      color: #858778;
-
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
-
-    .name-box input {
-      width: 100%;
-
-      padding: 15px;
-
-      border: 1px solid #66685c;
-      outline: none;
-
-      background: #1d1f1a;
-      color: var(--paper);
-
-      font-size: 14px;
-    }
-
-    .name-box input:focus {
-      border-color: #9b9d8a;
-    }
-
-    .consent-row {
-      display: flex;
-      gap: 10px;
-
-      max-width: 720px;
-
-      color: #888a7d;
-
-      font-family: monospace;
-      font-size: 10px;
-      line-height: 1.6;
-    }
-
-    .consent-row input {
-      margin-top: 3px;
-    }
-
-    .primary,
-    .secondary {
-      padding: 14px 20px;
-
-      border: 1px solid #77786c;
-
-      font-family: "Courier New", monospace;
-      font-size: 11px;
-      font-weight: bold;
-      letter-spacing: 1px;
-
-      cursor: pointer;
-
-      transition: .15s ease;
-    }
-
-    .primary {
-      margin-top: 25px;
-
-      background: var(--paper);
-      color: #161713;
-    }
-
-    .primary:hover {
-      background: #f0ead6;
-    }
-
-    .secondary {
-      background: transparent;
-      color: var(--paper);
-    }
-
-    .secondary:hover {
-      background: rgba(255,255,255,.06);
-    }
-
-    #home small {
-      display: block;
-
-      margin-top: 18px;
-
-      color: #65675c;
-
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 2px;
-    }
-
-    /* =========================================================
-       QUIZ
-       ========================================================= */
-
-    #quiz {
-      color: var(--paper);
-    }
-
-    .meta {
-      display: flex;
-      justify-content: space-between;
-
-      color: #858778;
-
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
-
-    .tape {
-      height: 7px;
-
-      margin: 12px 0 55px;
-
-      border: 1px solid #515349;
-
-      background: #10110e;
-    }
-
-    .tape i {
-      display: block;
-
-      width: 0;
-      height: 100%;
-
-      background: var(--green);
-
-      transition: width .2s ease;
-    }
-
-    .terminal {
-      position: relative;
-
-      padding: 32px;
-
-      border: 1px solid #66685c;
-
-      background:
-        repeating-linear-gradient(
-          0deg,
-          rgba(255,255,255,.012) 0px,
-          rgba(255,255,255,.012) 1px,
-          transparent 1px,
-          transparent 5px
-        ),
-        #20221c;
-
-      box-shadow:
-        inset 0 0 50px rgba(0,0,0,.25),
-        0 20px 70px rgba(0,0,0,.25);
-    }
-
-    .terminal-top {
-      display: flex;
-      justify-content: space-between;
-
-      padding-bottom: 15px;
-      margin-bottom: 35px;
-
-      border-bottom: 1px dashed #5e6055;
-
-      color: #7d8072;
-
+      margin: 20px 0;
+      padding: 12px;
+      border-left: 2px solid #555;
+      color: #777;
       font-family: monospace;
       font-size: 10px;
       letter-spacing: 1px;
     }
 
-    #domain {
-      color: #9b9d8a;
-
+    .begin-error {
+      margin-top: 14px;
+      color: #a58f7c;
       font-family: monospace;
       font-size: 10px;
-      letter-spacing: 3px;
-    }
-
-    #question {
-      max-width: 850px;
-
-      margin: 22px 0;
-
-      color: #e0d9c4;
-
-      font-size: clamp(28px, 5vw, 55px);
-      line-height: 1;
-      font-weight: normal;
-    }
-
-    .micro-prompt {
-      margin-bottom: 28px;
-
-      color: #77796e;
-
-      font-family: monospace;
-      font-size: 11px;
-    }
-
-    #options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .option {
-      min-height: 70px;
-
-      padding: 18px;
-
-      border: 1px solid #5e6056;
-
-      background: #292b25;
-      color: #cbc5b2;
-
-      text-align: left;
-
-      font-family: "Courier New", monospace;
-      font-size: 12px;
-
-      cursor: pointer;
-
-      transition: .12s ease;
-    }
-
-    .option:hover {
-      border-color: #a1a38e;
-
-      background: #33352e;
-
-      transform: translateX(2px);
-    }
-
-    .question-foot {
-      display: flex;
-      justify-content: space-between;
-
-      margin-top: 30px;
-
-      color: #696b61;
-
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 2px;
-    }
-
-    .machine-note,
-    .micro-reveal {
-      margin-top: 16px;
-
-      color: #67695e;
-
-      font-family: monospace;
-      font-size: 10px;
-      letter-spacing: 1px;
-    }
-
-    /* =========================================================
-       RESULT
-       ========================================================= */
-
-    #result {
-      color: var(--paper);
-    }
-
-    .hero-result {
-      padding: 55px 0;
-
-      border-bottom: 1px solid #55574d;
-    }
-
-    .hero-result small,
-    .panel > small {
-      color: #77796c;
-
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 3px;
-    }
-
-    .subject-name {
-      margin: 8px 0 50px;
-
-      color: #a1a391;
-
-      font-family: monospace;
-      font-size: 13px;
-    }
-
-    #archetype {
-      margin: 18px 0 4px;
-
-      color: #e2dbc7;
-
-      font-size: clamp(44px, 8vw, 92px);
-      line-height: .9;
-      font-weight: normal;
-      letter-spacing: -4px;
-    }
-
-    #archetypeCode {
-      color: #77796d;
-
-      font-family: monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-    }
-
-    .score {
-      margin: 40px 0 20px;
-
-      font-family: monospace;
-    }
-
-    #matchScore {
-      font-size: clamp(48px, 8vw, 82px);
-      color: #9ca58a;
-    }
-
-    .score small {
-      color: #77796c;
-    }
-
-    #description {
-      max-width: 680px;
-
-      color: #aaa995;
-
-      font-size: 18px;
-      line-height: 1.7;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-
-      margin-top: 20px;
-    }
-
-    .panel {
-      margin-top: 15px;
-      padding: 24px;
-
-      border: 1px solid #57594e;
-
-      background: rgba(0,0,0,.16);
-    }
-
-    .bar {
-      margin-top: 18px;
-    }
-
-    .bar-label {
-      display: flex;
-      justify-content: space-between;
-
-      color: #a7a695;
-
-      font-family: monospace;
-      font-size: 10px;
-    }
-
-    .bar-track {
-      height: 5px;
-
-      margin-top: 7px;
-
-      background: #11120f;
-    }
-
-    .bar-fill {
-      height: 100%;
-
-      background: var(--green);
-    }
-
-    .rank {
-      display: grid;
-      grid-template-columns: 45px 1fr 70px;
-
-      padding: 13px 0;
-
-      border-bottom: 1px dashed #4e5046;
-
-      color: #a8a796;
-
-      font-family: monospace;
-      font-size: 11px;
-    }
-
-    .rank b {
-      color: #d0c9b6;
-      font-weight: normal;
-    }
-
-    .fact {
-      margin-top: 20px;
-      padding: 25px;
-
-      border: 1px solid #5e6054;
-
-      background: #24261f;
-    }
-
-    .fact-label {
-      color: #969985;
-
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 3px;
-    }
-
-    .fact p {
-      color: #b4af9e;
-
-      line-height: 1.7;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-
-      margin-top: 25px;
-    }
-
-    .method-note {
-      margin-top: 30px;
-
-      color: #686a60;
-
-      font-family: monospace;
-      font-size: 10px;
-      line-height: 1.6;
-    }
-
-    .save-status,
-    .share-status {
-      margin-top: 15px;
-
-      color: #89917a;
-
-      font-family: monospace;
-      font-size: 10px;
-    }
-
-    .share-box {
-      display: none;
-
-      margin-top: 25px;
-    }
-
-    .share-box label {
-      display: block;
-
-      margin-bottom: 7px;
-
-      color: #77796c;
-
-      font-family: monospace;
-      font-size: 9px;
-      letter-spacing: 2px;
-    }
-
-    .share-box input {
-      width: 100%;
-
-      padding: 13px;
-
-      border: 1px solid #5e6056;
-
-      background: #151612;
-      color: #aaa995;
-    }
-
-    .privacy {
-      margin-top: 40px;
-      padding: 22px;
-
-      border: 1px solid #45473e;
-
-      color: #77796d;
-
-      font-family: monospace;
-      font-size: 10px;
-      line-height: 1.6;
-    }
-
-    .privacy b {
-      color: #999b8a;
-    }
-
-    /* =========================================================
-       MOBILE
-       ========================================================= */
-
-    @media(max-width:700px) {
-
-      main {
-        width: min(100% - 22px, 1050px);
-      }
-
-      header span {
-        display: none;
-      }
-
-      .screen {
-        padding-top: 40px;
-      }
-
-      #home h1 {
-        letter-spacing: -3px;
-      }
-
-      .terminal {
-        padding: 20px;
-      }
-
-      #options {
-        grid-template-columns: 1fr;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .login-machine {
-        padding: 28px;
-      }
-
-      .machine-title {
-        letter-spacing: -2px;
-      }
-
-      #archetype {
-        letter-spacing: -2px;
-      }
+      min-height: 14px;
     }
   </style>
 </head>
 
 <body>
 
-<!-- =========================================================
-     AUTHENTICATION WALL
-     ========================================================= -->
+<!-- =========================================
+     GOOGLE AUTHENTICATION
+     ========================================= -->
 
 <div id="login-screen">
 
   <div class="login-machine">
 
     <div class="machine-label">
-      CLASSIFICATION MACHINE / ACCESS CONTROL
+      COMPUTING APPARATUS // ACCESS TERMINAL
     </div>
 
     <div class="machine-title">
@@ -953,19 +161,21 @@
     </div>
 
     <p>
-      The machine requires an authenticated identity
-      before the sequence can begin.
+      Enter the machine using your Google identity.
+      Your identity is used only to provide access
+      to your personal result.
     </p>
 
-    <button id="googleLogin">
+    <button id="googleLogin" type="button">
       CONTINUE WITH GOOGLE
     </button>
 
-    <div
-      class="login-status"
-      id="authStatus"
-    >
+    <div class="login-status" id="loginAuthStatus">
       GOOGLE AUTHENTICATION REQUIRED
+    </div>
+
+    <div class="maker">
+      Made by heldenmunt
     </div>
 
   </div>
@@ -973,9 +183,9 @@
 </div>
 
 
-<!-- =========================================================
+<!-- =========================================
      APPLICATION
-     ========================================================= -->
+     ========================================= -->
 
 <div id="application">
 
@@ -983,13 +193,17 @@
 
   <main>
 
-    <!-- HEADER -->
+    <!-- =====================================
+         HEADER
+         ===================================== -->
 
     <header>
 
       <div>
-        <b>CLASSIFICATION MACHINE</b>
-        <span>// PERSONNEL FILE</span>
+        <b>THE MACHINE</b>
+        <span>
+          // PSYCHOLOGICAL CLASSIFICATION
+        </span>
       </div>
 
       <div class="online">
@@ -1000,21 +214,23 @@
     </header>
 
 
-    <!-- =====================================================
+    <!-- =====================================
          HOME
-         ===================================================== -->
+         ===================================== -->
 
     <section
       id="home"
       class="screen active"
     >
 
+      <div class="orbit o2"></div>
+
       <div class="machine-eye">
         ◉
       </div>
 
       <div class="stamp">
-        FILE 0036 / PRIVATE EXPERIMENT
+        CASE FILE // 0036
       </div>
 
       <h1>
@@ -1023,12 +239,20 @@
         ABOUT YOU.
       </h1>
 
+      <div class="machine-subtitle">
+        AN INTERACTIVE PERSONALITY CLASSIFICATION SYSTEM
+      </div>
+
       <p class="lead">
-        A computational personality experiment
-        built around pattern recognition,
-        symbolic inputs and a fixed library
-        of fictional character profiles.
+        Answer a sequence of questions.
+        The machine records your choices,
+        processes the resulting pattern,
+        and assigns one of 36 fictional
+        personality archetypes.
       </p>
+
+
+      <!-- IMPORTANT NOTICE -->
 
       <div class="notice">
 
@@ -1036,28 +260,33 @@
 
         <br><br>
 
-        This apparatus is entertainment/research
-        software and is not a clinical diagnosis.
+        This is a recreational personality
+        classification experience.
 
         <br><br>
 
-        Classification occurs locally in the browser.
-        Research participation is optional.
+        It is not a medical, psychological,
+        academic or clinical diagnosis.
 
         <br><br>
 
-        AUTHENTICATION REQUIRED.
+        There are no correct answers.
+        Choose what feels most like your
+        immediate instinct.
 
       </div>
 
 
-      <!-- USER -->
+      <!-- AUTHENTICATED USER -->
 
-      <div
-        class="auth-panel"
-        id="authPanel"
-      >
-        AUTHENTICATED SUBJECT
+      <div class="auth-panel">
+
+        ACCESS STATUS:
+
+        <strong id="userStatus">
+          AUTHENTICATED
+        </strong>
+
       </div>
 
 
@@ -1079,41 +308,39 @@
       </div>
 
 
-      <!-- CONSENT -->
-
-      <label class="consent-row">
-
-        <input
-          type="checkbox"
-          id="dataConsent"
-        >
-
-        <span>
-          I agree to send my answers and personality
-          profile for research and model improvement.
-        </span>
-
-      </label>
-
+      <!-- BEGIN -->
 
       <button
         class="primary"
         id="begin"
+        type="button"
       >
         BEGIN SEQUENCE →
       </button>
 
+      <div
+        class="begin-error"
+        id="beginError"
+      ></div>
+
 
       <small>
-        36 ARCHETYPES · 36 INPUTS · LOCAL CLASSIFICATION
+        36 ARCHETYPES · 36 INPUTS ·
+        LOCAL CLASSIFICATION ·
+        MACHINE-GENERATED DOSSIER
       </small>
+
+
+      <div class="maker">
+        Made by heldenmunt
+      </div>
 
     </section>
 
 
-    <!-- =====================================================
+    <!-- =====================================
          QUIZ
-         ===================================================== -->
+         ===================================== -->
 
     <section
       id="quiz"
@@ -1143,7 +370,7 @@
         <div class="terminal-top">
 
           <span>
-            SYMBOLIC PROCESS //
+            COMPUTING PROCESS //
             READ → WRITE → MOVE
           </span>
 
@@ -1159,15 +386,17 @@
         </label>
 
 
-        <h2 id="question"></h2>
+        <h2 id="question">
+          Initialising...
+        </h2>
 
 
         <div
           class="micro-prompt"
           id="microPrompt"
         >
-          Select the response closest to your
-          first instinct.
+          Choose the answer that feels most
+          like your first instinct.
         </div>
 
 
@@ -1193,7 +422,7 @@
         class="machine-note"
         id="machineNote"
       >
-        THE MACHINE RECORDS A SYMBOL.
+        THE MACHINE IS WAITING FOR INPUT.
       </div>
 
 
@@ -1205,9 +434,9 @@
     </section>
 
 
-    <!-- =====================================================
+    <!-- =====================================
          RESULT
-         ===================================================== -->
+         ===================================== -->
 
     <section
       id="result"
@@ -1243,11 +472,11 @@
         <div class="score">
 
           <span id="matchScore">
-            0
+            0.0
           </span>
 
           <small>
-            % COMPATIBILITY
+            % MATCH
           </small>
 
         </div>
@@ -1258,7 +487,7 @@
       </div>
 
 
-      <!-- PERSONALITY -->
+      <!-- PERSONALITY DATA -->
 
       <div class="grid">
 
@@ -1328,8 +557,9 @@
         <button
           class="secondary"
           id="nextFact"
+          type="button"
         >
-          ANOTHER RECORD →
+          ANOTHER FACT →
         </button>
 
       </div>
@@ -1342,6 +572,7 @@
         <button
           class="primary"
           id="share"
+          type="button"
         >
           SHARE RESULT
         </button>
@@ -1349,6 +580,7 @@
         <button
           class="secondary"
           id="shareData"
+          type="button"
         >
           SEND RESULT TO A FRIEND
         </button>
@@ -1356,6 +588,7 @@
         <button
           class="secondary"
           id="saveImage"
+          type="button"
         >
           SAVE RESULT CARD
         </button>
@@ -1363,6 +596,7 @@
         <button
           class="secondary"
           id="again"
+          type="button"
         >
           RUN AGAIN
         </button>
@@ -1372,7 +606,7 @@
 
       <div class="method-note">
 
-        COMPATIBILITY SCORE = relative similarity
+        MATCH SCORE = relative compatibility
         across the fixed archetype library.
         It is not a clinical diagnosis or an
         absolute probability.
@@ -1385,8 +619,6 @@
         class="save-status"
       ></div>
 
-
-      <!-- SHARE -->
 
       <div
         class="share-box"
@@ -1405,6 +637,7 @@
         <button
           class="secondary"
           id="copyLink"
+          type="button"
         >
           COPY LINK
         </button>
@@ -1417,69 +650,6 @@
         id="shareStatus"
       ></p>
 
-
-      <!-- ANONYMOUS RESEARCH -->
-
-      <div class="privacy">
-
-        <b>
-          OPTIONAL ANONYMOUS AGGREGATION
-        </b>
-
-        <p>
-          Help calibrate future versions by sending
-          only an anonymous response fingerprint
-          and classification result.
-          No name, email, phone number or raw
-          free text is sent through this option.
-        </p>
-
-
-        <label>
-
-          <input
-            type="checkbox"
-            id="optin"
-          >
-
-          I voluntarily opt in to anonymous
-          aggregated research.
-
-        </label>
-
-
-        <button
-          class="secondary"
-          id="sendData"
-        >
-          SEND ANONYMOUS RESULT
-        </button>
-
-
-        <small id="sendStatus"></small>
-
-      </div>
-
-
-      <!-- ===================================================
-           CREDIT
-           =================================================== -->
-
-      <div
-        style="
-          margin-top:80px;
-          padding-top:25px;
-          border-top:1px solid #46483f;
-          color:#66685e;
-          font-family:'Courier New',monospace;
-          font-size:9px;
-          letter-spacing:3px;
-          text-align:center;
-        "
-      >
-        MADE BY HELDENMUNT
-      </div>
-
     </section>
 
   </main>
@@ -1487,9 +657,9 @@
 </div>
 
 
-<!-- =========================================================
+<!-- =========================================
      FIREBASE
-     ========================================================= -->
+     ========================================= -->
 
 <script
   type="module"
@@ -1501,10 +671,110 @@
   src="auth-gate.js"
 ></script>
 
-<script
-  src="script.js"
-  defer
-></script>
+
+<!-- =========================================
+     MAIN CLASSIFIER
+     ========================================= -->
+
+<script src="script.js" defer></script>
+
+
+<!-- =========================================
+     BEGIN BUTTON FALLBACK
+     ========================================= -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const beginButton = document.getElementById("begin");
+  const nameInput = document.getElementById("userName");
+  const beginError = document.getElementById("beginError");
+
+  if (!beginButton) return;
+
+  beginButton.addEventListener("click", function () {
+
+    beginError.textContent = "";
+
+    /*
+     * The classifier script normally provides renderQuestion()
+     * and show(). This handler waits for those functions and
+     * starts the questionnaire directly.
+     */
+
+    if (typeof show !== "function") {
+      beginError.textContent =
+        "MACHINE ERROR: classifier interface not loaded.";
+      console.error("show() is missing from script.js");
+      return;
+    }
+
+    if (typeof renderQuestion !== "function") {
+      beginError.textContent =
+        "MACHINE ERROR: question engine not loaded.";
+      console.error("renderQuestion() is missing from script.js");
+      return;
+    }
+
+    const name =
+      nameInput.value.trim() || "ANONYMOUS SUBJECT";
+
+    /*
+     * Use the existing global state from script.js.
+     */
+
+    if (typeof state !== "undefined") {
+      state.name = name;
+      state.i = 0;
+      state.answers = [];
+      state.answerTimes = [];
+      state.profile = new Array(11).fill(.5);
+      state.best = null;
+      state.match = 0;
+      state.confidence = 0;
+      state.startedAt = Date.now();
+    }
+
+    localStorage.removeItem("vp_progress");
+
+    /*
+     * Move from HOME -> QUIZ.
+     */
+
+    show("quiz");
+
+    /*
+     * Render first question.
+     */
+
+    renderQuestion();
+
+    /*
+     * Update optional UI elements.
+     */
+
+    const subject =
+      document.getElementById("resultName");
+
+    if (subject) {
+      subject.textContent = name;
+    }
+
+    const streak =
+      document.getElementById("streak");
+
+    if (streak) {
+      streak.textContent = "CHAIN 0";
+    }
+
+    console.log(
+      "[MACHINE] Sequence started for:",
+      name
+    );
+  });
+
+});
+</script>
 
 </body>
 </html>
