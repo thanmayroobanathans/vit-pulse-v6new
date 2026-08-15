@@ -44,9 +44,11 @@ const QUESTIONS=[
 ["The machine gives you an unexplained result.",["Trust the system.","Demand evidence.","Investigate.","Make a joke."],["C","T","N","E"],"MACHINE"]
 ];
 
-// 36 fixed fictional archetypes.
-// Vector dimensions: O,C,E,A,N, autonomy, social-intuition, intellect,
-// plus Jung-inspired I/E,T/F,S/N encoded as continuous axes.
+
+/* =========================================================
+   36 FIXED FICTIONAL ARCHETYPES
+   ========================================================= */
+
 const ARCHETYPES=[
 ["DER ENTDECKER","VP-01 / EXPLORATOR","Novelty is your natural habitat.",[.94,.42,.72,.58,.82,.88,.74,.79,.68,.55,.91]],
 ["DER STRATEGE","VP-02 / STRATEGUS","You turn uncertainty into structure.",[.78,.95,.43,.62,.35,.91,.48,.94,.31,.83,.71]],
@@ -86,6 +88,11 @@ const ARCHETYPES=[
 ["DER NAVIGATOR","VP-36 / NAVIGATOR","You adapt the route without losing the destination.",[.77,.78,.71,.69,.66,.90,.73,.82,.45,.59,.84]]
 ];
 
+
+/* =========================================================
+   MACHINE FACTS
+   ========================================================= */
+
 const FACTS=[
 ["MACHINE OBSERVATION","Your answer pattern contains a high curiosity signal. The machine has filed this under: 'potentially troublesome.'"],
 ["ARCHIVAL NOTE","You selected an answer associated with novelty. Bureaucracy has been notified."],
@@ -109,187 +116,1374 @@ const FACTS=[
 ["FINAL NOTICE","Your classification may be wrong. This is intentional humility, not a software bug."]
 ];
 
-const state={name:"",i:0,profile:new Array(11).fill(.5),answers:[],answerTimes:[],best:null,match:0,confidence:0,factIndex:0,startedAt:null};
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+const state={
+  name:"",
+  i:0,
+  profile:new Array(11).fill(.5),
+  answers:[],
+  answerTimes:[],
+  best:null,
+  match:0,
+  confidence:0,
+  factIndex:0,
+  startedAt:null
+};
+
 const $=id=>document.getElementById(id);
-function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");scrollTo(0,0)}
-function renderQuestion(){
-  if($("progressText"))$("progressText").textContent=`QUESTION ${state.i+1} OF ${QUESTIONS.length}`;
-  if($("progressPct"))$("progressPct").textContent=`${Math.round(state.i/QUESTIONS.length*100)}%`;
- const q=QUESTIONS[state.i];$("progress").textContent=`INPUT ${String(state.i+1).padStart(2,"0")} / ${QUESTIONS.length}`;$("state").textContent=`STATE q${state.i}`;$("tape").style.width=`${(state.i+1)/QUESTIONS.length*100}%`;$("domain").textContent=q[3]+" // INPUT SYMBOL";$("question").textContent=q[0];$("machineNote").textContent="THE MACHINE RECORDS A SYMBOL. IT DOES NOT RECORD YOUR NAME.";
- $("options").innerHTML="";q[1].forEach((text,j)=>{const b=document.createElement("button");b.className="option";b.textContent=`${String.fromCharCode(65+j)}  ${text}`;b.onclick=()=>answer(j,q[2][j]);$("options").appendChild(b)});
+
+
+/* =========================================================
+   SCREEN CONTROL
+   ========================================================= */
+
+function show(id){
+  document
+    .querySelectorAll(".screen")
+    .forEach(x=>x.classList.remove("active"));
+
+  const target=$(id);
+
+  if(target){
+    target.classList.add("active");
+  }
+
+  scrollTo(0,0);
 }
-/*
- * V4 MATCH ENGINE — calibrated browser implementation
- *
- * Important: no personality classifier is literally "perfect". This engine is
- * designed to be internally consistent, transparent, and statistically better
- * behaved than the previous heuristic:
- *   1. Each response contributes to an 11-dimensional latent profile.
- *   2. Contributions are normalized by question count.
- *   3. Archetype similarity combines standardized Mahalanobis distance,
- *      cosine similarity and Pearson correlation.
- *   4. A softmax converts relative scores into a ranking distribution.
- *   5. The displayed percentage is relative compatibility, not a fake
- *      probability that the archetype is objectively "true".
- *   6. The top-two margin is reported as classification confidence.
- */
+
+
+/* =========================================================
+   QUESTION RENDERING
+   ========================================================= */
+
+function renderQuestion(){
+
+  if($("progressText")){
+    $("progressText").textContent=
+      `QUESTION ${state.i+1} OF ${QUESTIONS.length}`;
+  }
+
+  if($("progressPct")){
+    $("progressPct").textContent=
+      `${Math.round(state.i/QUESTIONS.length*100)}%`;
+  }
+
+  const q=QUESTIONS[state.i];
+
+  $("progress").textContent=
+    `INPUT ${String(state.i+1).padStart(2,"0")} / ${QUESTIONS.length}`;
+
+  $("state").textContent=
+    `STATE q${state.i}`;
+
+  $("tape").style.width=
+    `${(state.i+1)/QUESTIONS.length*100}%`;
+
+  $("domain").textContent=
+    q[3]+" // INPUT SYMBOL";
+
+  $("question").textContent=
+    q[0];
+
+  $("machineNote").textContent=
+    "THE MACHINE RECORDS A SYMBOL. IT DOES NOT RECORD YOUR NAME.";
+
+  $("options").innerHTML="";
+
+  q[1].forEach((text,j)=>{
+
+    const b=document.createElement("button");
+
+    b.className="option";
+
+    b.textContent=
+      `${String.fromCharCode(65+j)}  ${text}`;
+
+    b.onclick=()=>{
+      answer(j,q[2][j]);
+    };
+
+    $("options").appendChild(b);
+
+  });
+}
+
+
+/* =========================================================
+   MATCH ENGINE
+   ========================================================= */
 
 const DIMENSIONS=[
-  "O","C","E","A","N","AUTONOMY","SOCIAL_INTUITION",
-  "INTELLECT","INTROVERSION","THINKING","INTUITION"
+  "O",
+  "C",
+  "E",
+  "A",
+  "N",
+  "AUTONOMY",
+  "SOCIAL_INTUITION",
+  "INTELLECT",
+  "INTROVERSION",
+  "THINKING",
+  "INTUITION"
 ];
 
 const KEY_VECTOR={
- O:[ 1,0,0,0,0, .35,.15, .70,0,0,1],
- C:[ 0,1,0,0,0, .25,0, .45,0,0,0],
- E:[ 0,0,1,.20,0,0,.75,.10,-1,0,.10],
- A:[ 0,0,0,1,-.10,0, .90,0,0,-.45,.15],
- N:[ .35,0,.10,-.10,1,.15,.15,.30,0,.05,.55],
- I:[ 0,0,-1,0,0,.55,.35,.45,1,0,.20],
- T:[ 0,0,0,-.35,0,.25,-.20,.90,0,1,.30],
- F:[ 0,0,0,.45,0,-.05,.75,.05,0,-1,.20],
- S:[-.25,.15,0,0,-.10,0,.15,.20,0,0,-1]
+
+  O:[1,0,0,0,0,.35,.15,.70,0,0,1],
+
+  C:[0,1,0,0,0,.25,0,.45,0,0,0],
+
+  E:[0,0,1,.20,0,0,.75,.10,-1,0,.10],
+
+  A:[0,0,0,1,-.10,0,.90,0,0,-.45,.15],
+
+  N:[.35,0,.10,-.10,1,.15,.15,.30,0,.05,.55],
+
+  I:[0,0,-1,0,0,.55,.35,.45,1,0,.20],
+
+  T:[0,0,0,-.35,0,.25,-.20,.90,0,1,.30],
+
+  F:[0,0,0,.45,0,-.05,.75,.05,0,-1,.20],
+
+  S:[-.25,.15,0,0,-.10,0,.15,.20,0,0,-1]
 };
 
-const DIM_VARIANCE=[.22,.19,.23,.20,.21,.24,.20,.18,.23,.22,.20];
-const PRIOR_MEAN=new Array(11).fill(.5);
+const DIM_VARIANCE=[
+  .22,.19,.23,.20,.21,.24,.20,.18,.23,.22,.20
+];
+
+const PRIOR_MEAN=
+  new Array(11).fill(.5);
+
 const RESPONSE_STRENGTH=.075;
 
-function vecForResponse(key, optionIndex){
-  const base=KEY_VECTOR[key]||KEY_VECTOR.O;
-  // Mild answer-position modulation prevents every question with the same
-  // symbol from becoming mathematically identical, without overwhelming the
-  // semantic key assigned by the questionnaire author.
-  const position=[1.00,.96,1.04,.98][optionIndex]||1;
-  return base.map((v,k)=>v*position);
+
+/* =========================================================
+   RESPONSE VECTOR
+   ========================================================= */
+
+function vecForResponse(key,optionIndex){
+
+  const base=
+    KEY_VECTOR[key] || KEY_VECTOR.O;
+
+  const position=
+    [1.00,.96,1.04,.98][optionIndex] || 1;
+
+  return base.map(v=>v*position);
 }
+
+
+/* =========================================================
+   NORMALIZE
+   ========================================================= */
 
 function normalizeProfile(){
-  // Convert accumulated latent evidence to [0.03, .97] with a bounded
-  // logistic transform. This prevents a few answers from saturating a trait.
+
   return state.profile.map(v=>{
+
     const x=(v-.5)*2;
-    return Math.max(.03,Math.min(.97,1/(1+Math.exp(-1.55*x))));
+
+    return Math.max(
+      .03,
+      Math.min(
+        .97,
+        1/(1+Math.exp(-1.55*x))
+      )
+    );
+
   });
 }
+
+
+/* =========================================================
+   ANSWER
+   ========================================================= */
 
 function answer(j,key){
+
   state.answerTimes.push(Date.now());
-  localStorage.setItem("vp_progress",JSON.stringify({i:state.i+1,answers:state.answers.concat(j),name:state.name}));
+
+  localStorage.setItem(
+    "vp_progress",
+    JSON.stringify({
+      i:state.i+1,
+      answers:state.answers.concat(j),
+      name:state.name
+    })
+  );
+
   state.answers.push(j);
-  const rv=vecForResponse(key,j);
-  state.profile=state.profile.map((v,k)=>{
-    const evidence=rv[k]*RESPONSE_STRENGTH;
-    return Math.max(.03,Math.min(.97,v+evidence));
-  });
+
+  const rv=
+    vecForResponse(key,j);
+
+  state.profile=
+    state.profile.map((v,k)=>{
+
+      const evidence=
+        rv[k]*RESPONSE_STRENGTH;
+
+      return Math.max(
+        .03,
+        Math.min(
+          .97,
+          v+evidence
+        )
+      );
+
+    });
+
   state.i++;
-  if(state.i<QUESTIONS.length)renderQuestion();else classify();
+
+  if(state.i<QUESTIONS.length){
+
+    renderQuestion();
+
+  }else{
+
+    classify();
+
+  }
 }
 
+
+/* =========================================================
+   DISTANCE FUNCTIONS
+   ========================================================= */
+
 function standardized(a,b){
-  return a.map((v,k)=>(v-b[k])/DIM_VARIANCE[k]);
+
+  return a.map(
+    (v,k)=>
+      (v-b[k])/DIM_VARIANCE[k]
+  );
+
 }
 
 function mahalanobis(a,b){
-  const z=standardized(a,b);
-  return Math.sqrt(z.reduce((s,v)=>s+v*v,0)/a.length);
+
+  const z=
+    standardized(a,b);
+
+  return Math.sqrt(
+    z.reduce(
+      (s,v)=>s+v*v,
+      0
+    )/a.length
+  );
+
 }
 
 function cosine(a,b){
-  let dot=0,aa=0,bb=0;
+
+  let dot=0;
+  let aa=0;
+  let bb=0;
+
   for(let k=0;k<a.length;k++){
-    const x=a[k]-.5,y=b[k]-.5;
-    dot+=x*y;aa+=x*x;bb+=y*y;
+
+    const x=a[k]-.5;
+    const y=b[k]-.5;
+
+    dot+=x*y;
+    aa+=x*x;
+    bb+=y*y;
+
   }
-  return aa&&bb?dot/(Math.sqrt(aa)*Math.sqrt(bb)):0;
+
+  return aa&&bb
+    ?dot/(Math.sqrt(aa)*Math.sqrt(bb))
+    :0;
+
 }
 
 function pearson(a,b){
-  const am=a.reduce((s,v)=>s+v,0)/a.length;
-  const bm=b.reduce((s,v)=>s+v,0)/b.length;
-  let num=0,da=0,db=0;
+
+  const am=
+    a.reduce((s,v)=>s+v,0)/a.length;
+
+  const bm=
+    b.reduce((s,v)=>s+v,0)/b.length;
+
+  let num=0;
+  let da=0;
+  let db=0;
+
   for(let k=0;k<a.length;k++){
-    const x=a[k]-am,y=b[k]-bm;
-    num+=x*y;da+=x*x;db+=y*y;
+
+    const x=a[k]-am;
+    const y=b[k]-bm;
+
+    num+=x*y;
+    da+=x*x;
+    db+=y*y;
+
   }
-  return da&&db?num/Math.sqrt(da*db):0;
+
+  return da&&db
+    ?num/Math.sqrt(da*db)
+    :0;
+
 }
+
+
+/* =========================================================
+   COMPATIBILITY
+   ========================================================= */
 
 function rawCompatibility(a,b){
-  const d=mahalanobis(a,b);
-  const c=(cosine(a,b)+1)/2;
-  const r=(pearson(a,b)+1)/2;
-  // Distance is dominant; the two shape measures stabilize the ranking.
-  return .56*Math.exp(-d/2.25)+.27*c+.17*r;
+
+  const d=
+    mahalanobis(a,b);
+
+  const c=
+    (cosine(a,b)+1)/2;
+
+  const r=
+    (pearson(a,b)+1)/2;
+
+  return(
+    .56*Math.exp(-d/2.25)+
+    .27*c+
+    .17*r
+  );
+
 }
+
+
+/* =========================================================
+   SOFTMAX
+   ========================================================= */
 
 function softmax(scores,temperature=.075){
-  const m=Math.max(...scores);
-  const ex=scores.map(s=>Math.exp((s-m)/temperature));
-  const z=ex.reduce((a,b)=>a+b,0);
-  return ex.map(v=>v/z);
+
+  const m=
+    Math.max(...scores);
+
+  const ex=
+    scores.map(
+      s=>Math.exp(
+        (s-m)/temperature
+      )
+    );
+
+  const z=
+    ex.reduce(
+      (a,b)=>a+b,
+      0
+    );
+
+  return ex.map(
+    v=>v/z
+  );
+
 }
+
+
+/* =========================================================
+   FIRESTORE RESEARCH SAVE
+   =========================================================
+   
+   FIXED SECTION:
+   - Requires consent
+   - Requires Firebase
+   - Requires authenticated Google user
+   - Writes to participants/{uid}
+   - Uses merge:true
+   - Logs the actual Firebase error
+   ========================================================= */
 
 async function submitResearchData(){
- const consent=document.getElementById("dataConsent")?.checked,fb=window.VP_FIREBASE,user=window.VP_USER;
- if(!consent||!fb||!user)return;
- try{
-  await fb.setDoc(fb.doc(fb.db,"participants",user.uid),{
-   uid:user.uid,name:state.name,answers:state.answers,features:state.profile,
-   archetype:state.best?.a?.[0]||null,archetypeCode:state.best?.a?.[1]||null,
-   compatibility:Number($("matchScore").textContent),confidence:state.confidence,
-   modelVersion:"v5",questionCount:QUESTIONS.length,completedAt:fb.serverTimestamp()
-  },{merge:true});
-  if($("saveStatus"))$("saveStatus").textContent="PROFILE SAVED FOR RESEARCH.";
- }catch(e){if($("saveStatus"))$("saveStatus").textContent="RESULT CREATED. RESEARCH SAVE FAILED.";console.error(e);}
+
+  const consent=
+    $("dataConsent")?.checked;
+
+  if(!consent){
+
+    if($("saveStatus")){
+      $("saveStatus").textContent=
+        "RESEARCH CONSENT NOT GIVEN.";
+    }
+
+    return;
+  }
+
+
+  const fb=
+    window.VP_FIREBASE;
+
+  const user=
+    window.VP_USER;
+
+
+  /* Firebase module not ready */
+
+  if(!fb){
+
+    console.error(
+      "VIT PULSE: Firebase is not available."
+    );
+
+    if($("saveStatus")){
+      $("saveStatus").textContent=
+        "FIREBASE NOT READY.";
+    }
+
+    return;
+  }
+
+
+  /* Google authentication user missing */
+
+  if(!user){
+
+    console.error(
+      "VIT PULSE: No authenticated Firebase user."
+    );
+
+    if($("saveStatus")){
+      $("saveStatus").textContent=
+        "AUTHENTICATION USER NOT FOUND.";
+    }
+
+    return;
+  }
+
+
+  try{
+
+    console.log(
+      "VIT PULSE: Saving participant:",
+      user.uid
+    );
+
+
+    const participantRef=
+      fb.doc(
+        fb.db,
+        "participants",
+        user.uid
+      );
+
+
+    await fb.setDoc(
+      participantRef,
+      {
+
+        uid:user.uid,
+
+        name:
+          state.name ||
+          "Anonymous Subject",
+
+        answers:
+          state.answers,
+
+        features:
+          state.profile,
+
+        archetype:
+          state.best?.a?.[0] ||
+          null,
+
+        archetypeCode:
+          state.best?.a?.[1] ||
+          null,
+
+        compatibility:
+          Number(
+            $("matchScore")?.textContent || 0
+          ),
+
+        confidence:
+          state.confidence,
+
+        modelVersion:
+          "v5",
+
+        questionCount:
+          QUESTIONS.length,
+
+        completedAt:
+          fb.serverTimestamp()
+
+      },
+      {
+        merge:true
+      }
+    );
+
+
+    console.log(
+      "VIT PULSE: Firestore save successful:",
+      user.uid
+    );
+
+
+    if($("saveStatus")){
+
+      $("saveStatus").textContent=
+        "PROFILE SAVED FOR RESEARCH.";
+
+    }
+
+
+  }catch(error){
+
+    console.error(
+      "VIT PULSE: Firestore save failed:",
+      error
+    );
+
+
+    if($("saveStatus")){
+
+      $("saveStatus").textContent=
+        "RESULT CREATED. RESEARCH SAVE FAILED.";
+
+    }
+
+  }
+
 }
 
+
+/* =========================================================
+   CLASSIFICATION
+   ========================================================= */
+
 function classify(){
-  state.profile=normalizeProfile();
 
-  const scored=ARCHETYPES.map((a,idx)=>({
-    idx,a,
-    raw:rawCompatibility(state.profile,a[3])
-  })).sort((x,y)=>y.raw-x.raw);
+  state.profile=
+    normalizeProfile();
 
-  const posterior=softmax(scored.map(x=>x.raw));
-  scored.forEach((x,i)=>x.p=posterior[i]);
 
-  state.best=scored[0];
+  const scored=
+    ARCHETYPES
+      .map((a,idx)=>({
 
-  // Relative compatibility: how much better the best match is than the
-  // archetype field's mean, mapped to an interpretable 0–100 scale.
-  const mean=scored.reduce((s,x)=>s+x.raw,0)/scored.length;
-  const spread=Math.sqrt(scored.reduce((s,x)=>s+(x.raw-mean)**2,0)/scored.length)||.001;
-  const relative=Math.max(0,Math.min(1,.5+.20*(state.best.raw-mean)/spread));
-  state.match=relative;
+        idx,
+        a,
 
-  const top2=scored.slice(0,2);
-  const margin=Math.max(0,top2[0].p-top2[1].p);
-  state.confidence=Math.min(1,.45+margin*2.2);
+        raw:
+          rawCompatibility(
+            state.profile,
+            a[3]
+          )
 
-  const a=state.best.a;
+      }))
+      .sort(
+        (x,y)=>y.raw-x.raw
+      );
 
-  $("archetype").textContent=a[0];
-  $("archetypeCode").textContent=a[1];
-  $("description").textContent=a[2];
-  $("matchScore").textContent=(state.match*100).toFixed(1);
 
-  renderBars("jungStats",[
-    ["INTROVERSION",1-state.profile[2]],
-    ["EXTRAVERSION",state.profile[2]],
-    ["THINKING",state.profile[9]],
-    ["FEELING",1-state.profile[9]],
-    ["SENSATION",1-state.profile[10]],
-    ["INTUITION",state.profile[10]]
-  ]);
-  renderBars("bigFive",[
-    ["OPENNESS",state.profile[0]],
-    ["CONSCIENTIOUSNESS",state.profile[1]],
-    ["EXTRAVERSION",state.profile[2]],
-    ["AGREEABLENESS",state.profile[3]],
-    ["NEUROTICISM",state.profile[4]]
-  ]);
+  const posterior=
+    softmax(
+      scored.map(
+        x=>x.raw
+      )
+    );
 
-  $("ranking").innerHTML=scored.slice(0,7).map((x,n)=>
-    `<div class="rank"><span>${String(n+1).padStart(2,"0")}</span><b>${x.a[0]}</b><span>${(x.p*100).toFixed(1)}%</span></
+
+  scored.forEach(
+    (x,i)=>{
+      x.p=
+        posterior[i];
+    }
+  );
+
+
+  state.best=
+    scored[0];
+
+
+  const mean=
+    scored.reduce(
+      (s,x)=>s+x.raw,
+      0
+    )/scored.length;
+
+
+  const spread=
+    Math.sqrt(
+      scored.reduce(
+        (s,x)=>
+          s+(x.raw-mean)**2,
+        0
+      )/scored.length
+    )||.001;
+
+
+  const relative=
+    Math.max(
+      0,
+      Math.min(
+        1,
+        .5+
+        .20*
+        (state.best.raw-mean)/
+        spread
+      )
+    );
+
+
+  state.match=
+    relative;
+
+
+  const top2=
+    scored.slice(0,2);
+
+
+  const margin=
+    Math.max(
+      0,
+      top2[0].p-top2[1].p
+    );
+
+
+  state.confidence=
+    Math.min(
+      1,
+      .45+margin*2.2
+    );
+
+
+  const a=
+    state.best.a;
+
+
+  $("archetype").textContent=
+    a[0];
+
+  $("archetypeCode").textContent=
+    a[1];
+
+  $("description").textContent=
+    a[2];
+
+  $("matchScore").textContent=
+    (state.match*100).toFixed(1);
+
+
+  renderBars(
+    "jungStats",
+    [
+      ["INTROVERSION",1-state.profile[2]],
+      ["EXTRAVERSION",state.profile[2]],
+      ["THINKING",state.profile[9]],
+      ["FEELING",1-state.profile[9]],
+      ["SENSATION",1-state.profile[10]],
+      ["INTUITION",state.profile[10]]
+    ]
+  );
+
+
+  renderBars(
+    "bigFive",
+    [
+      ["OPENNESS",state.profile[0]],
+      ["CONSCIENTIOUSNESS",state.profile[1]],
+      ["EXTRAVERSION",state.profile[2]],
+      ["AGREEABLENESS",state.profile[3]],
+      ["NEUROTICISM",state.profile[4]]
+    ]
+  );
+
+
+  $("ranking").innerHTML=
+    scored
+      .slice(0,7)
+      .map(
+        (x,n)=>
+          `<div class="rank">
+            <span>${String(n+1).padStart(2,"0")}</span>
+            <b>${x.a[0]}</b>
+            <span>${(x.p*100).toFixed(1)}%</span>
+          </div>`
+      )
+      .join("");
+
+
+  const campus=[
+
+    [
+      "SJT / AMAZON",
+      Math.round(
+        state.profile[2]*65+
+        state.profile[0]*35
+      )+"%"
+    ],
+
+    [
+      "SOCIAL ENERGY",
+      Math.round(
+        state.profile[2]*100
+      )+"%"
+    ],
+
+    [
+      "NOVELTY SEEKING",
+      Math.round(
+        state.profile[4]*70+
+        state.profile[0]*30
+      )+"%"
+    ],
+
+    [
+      "STRUCTURE",
+      Math.round(
+        state.profile[1]*100
+      )+"%"
+    ],
+
+    [
+      "INTELLECTUAL CURIOSITY",
+      Math.round(
+        state.profile[7]*100
+      )+"%"
+    ]
+
+  ];
+
+
+  $("campusStats").innerHTML=
+    campus
+      .map(
+        x=>
+          `<div class="campus">
+            <span>${x[0]}</span>
+            <b>${x[1]}</b>
+          </div>`
+      )
+      .join("");
+
+
+  if($("machineNote")){
+
+    $("machineNote").textContent=
+      `TOP-MATCH MARGIN ${(margin*100).toFixed(1)}% // RELATIVE CONFIDENCE ${(state.confidence*100).toFixed(1)}%`;
+
+  }
+
+
+  state.factIndex=
+    Math.floor(
+      Math.random()*FACTS.length
+    );
+
+
+  renderFact();
+
+  show("result");
+
+
+  /*
+     IMPORTANT:
+     Save only AFTER the result has been calculated
+     and the authenticated user is available.
+  */
+
+  await submitResearchData();
+
+
+  localStorage.removeItem(
+    "vp_progress"
+  );
+
+}
+
+
+/* =========================================================
+   RESULT BARS
+   ========================================================= */
+
+function renderBars(id,data){
+
+  const el=$(id);
+
+  if(!el)return;
+
+  el.innerHTML=
+    data
+      .map(
+        x=>
+          `<div class="barrow">
+            <span>${x[0]}</span>
+            <div class="bar">
+              <i style="width:${Math.round(x[1]*100)}%"></i>
+            </div>
+            <span>${Math.round(x[1]*100)}</span>
+          </div>`
+      )
+      .join("");
+
+}
+
+
+/* =========================================================
+   FACTS
+   ========================================================= */
+
+function renderFact(){
+
+  const f=
+    FACTS[
+      state.factIndex%FACTS.length
+    ];
+
+  $("factLabel").textContent=
+    f[0];
+
+  $("fact").textContent=
+    f[1];
+
+}
+
+
+/* =========================================================
+   BEGIN
+   ========================================================= */
+
+$("begin").onclick=()=>{
+
+  state.name=
+    $("userName").value.trim() ||
+    "Anonymous Subject";
+
+  $("resultName").textContent=
+    state.name;
+
+  state.i=0;
+
+  state.profile=
+    new Array(11).fill(.5);
+
+  state.answers=[];
+
+  state.answerTimes=[];
+
+  state.best=null;
+
+  state.match=0;
+
+  state.confidence=0;
+
+  state.startedAt=
+    Date.now();
+
+  show("quiz");
+
+  renderQuestion();
+
+};
+
+
+/* =========================================================
+   AGAIN
+   ========================================================= */
+
+$("again").onclick=()=>{
+  $("begin").click();
+};
+
+
+/* =========================================================
+   NEXT FACT
+   ========================================================= */
+
+$("nextFact").onclick=()=>{
+
+  state.factIndex=
+    (
+      state.factIndex+
+      1+
+      Math.floor(Math.random()*3)
+    )%FACTS.length;
+
+  renderFact();
+
+};
+
+
+/* =========================================================
+   SHARE
+   ========================================================= */
+
+function resultPayload(){
+
+  return{
+
+    name:state.name,
+
+    archetype:
+      $("archetype").textContent,
+
+    score:
+      $("matchScore").textContent,
+
+    code:
+      $("archetypeCode").textContent,
+
+    confidence:
+      state.confidence
+        ?Math.round(
+          state.confidence*100
+        )
+        :null,
+
+    version:"v4"
+
+  };
+
+}
+
+
+function makeShareUrl(){
+
+  const p=
+    resultPayload();
+
+  const data=
+    btoa(
+      unescape(
+        encodeURIComponent(
+          JSON.stringify(p)
+        )
+      )
+    );
+
+  return(
+    location.href.split("#")[0]+
+    "#result="+
+    data
+  );
+
+}
+
+
+$("share").onclick=
+  async()=>{
+
+    const t=
+      `${state.name} was classified as ${$("archetype").textContent} — ${$("matchScore").textContent}% match. The machine has spoken.`;
+
+    const u=
+      makeShareUrl();
+
+    try{
+
+      if(navigator.share){
+
+        await navigator.share({
+          title:"VIT PULSE — Classification",
+          text:t,
+          url:u
+        });
+
+      }else{
+
+        await navigator.clipboard.writeText(
+          t+" "+u
+        );
+
+        $("shareStatus").textContent=
+          "RESULT LINK COPIED.";
+
+      }
+
+    }catch(e){
+
+      $("shareStatus").textContent=
+        "SHARE CANCELLED.";
+
+    }
+
+  };
+
+
+$("shareData").onclick=
+  async()=>{
+
+    const u=
+      makeShareUrl();
+
+    $("shareBox").classList.add("active");
+
+    $("shareLink").value=
+      u;
+
+    try{
+
+      await navigator.clipboard.writeText(u);
+
+      $("shareStatus").textContent=
+        "RESULT LINK COPIED — SEND IT TO A FRIEND.";
+
+    }catch(e){}
+
+  };
+
+
+$("copyLink").onclick=
+  async()=>{
+
+    await navigator.clipboard.writeText(
+      $("shareLink").value
+    );
+
+    $("shareStatus").textContent=
+      "LINK COPIED.";
+
+  };
+
+
+/* =========================================================
+   SAVE IMAGE
+   ========================================================= */
+
+$("saveImage").onclick=
+  async()=>{
+
+    try{
+
+      const canvas=
+        document.createElement("canvas");
+
+      const ctx=
+        canvas.getContext("2d");
+
+      canvas.width=1200;
+
+      canvas.height=760;
+
+      ctx.fillStyle="#080908";
+
+      ctx.fillRect(
+        0,
+        0,
+        1200,
+        760
+      );
+
+      ctx.fillStyle="#ebe5d5";
+
+      ctx.font=
+        "bold 46px Arial";
+
+      ctx.fillText(
+        "VIT PULSE",
+        70,
+        90
+      );
+
+      ctx.fillStyle="#c94236";
+
+      ctx.font=
+        "bold 78px Arial";
+
+      ctx.fillText(
+        $("archetype").textContent,
+        70,
+        230
+      );
+
+      ctx.fillStyle="#ebe5d5";
+
+      ctx.font=
+        "28px monospace";
+
+      ctx.fillText(
+        state.name,
+        70,
+        300
+      );
+
+      ctx.font=
+        "bold 80px Arial";
+
+      ctx.fillText(
+        $("matchScore").textContent+"%",
+        70,
+        430
+      );
+
+      ctx.font=
+        "22px monospace";
+
+      ctx.fillText(
+        "PSYCHOLOGICAL CLASSIFICATION // V4",
+        70,
+        510
+      );
+
+      ctx.fillText(
+        "JUNG-INSPIRED · STATISTICAL · FICTIONAL",
+        70,
+        550
+      );
+
+      const a=
+        document.createElement("a");
+
+      a.download=
+        "vit-pulse-result.png";
+
+      a.href=
+        canvas.toDataURL("image/png");
+
+      a.click();
+
+      $("shareStatus").textContent=
+        "RESULT CARD CREATED.";
+
+    }catch(e){
+
+      console.error(e);
+
+      $("shareStatus").textContent=
+        "IMAGE EXPORT FAILED.";
+
+    }
+
+  };
+
+
+/* =========================================================
+   ANONYMOUS AGGREGATION
+   ========================================================= */
+
+$("sendData").onclick=
+  async()=>{
+
+    if(!$("optin").checked){
+
+      $("sendStatus").textContent=
+        "OPT-IN REQUIRED. NOTHING WAS SENT.";
+
+      return;
+
+    }
+
+
+    const AGGREGATION_ENDPOINT="";
+
+
+    const payload={
+
+      version:"v3",
+
+      archetype:
+        state.best?.a?.[0]||null,
+
+      score:
+        Math.round(
+          state.match*1000
+        )/1000,
+
+      answersHash:
+        await hash(
+          JSON.stringify(
+            state.answers
+          )
+        ),
+
+      createdAt:
+        new Date().toISOString()
+
+    };
+
+
+    if(!AGGREGATION_ENDPOINT){
+
+      $("sendStatus").textContent=
+        "LOCAL DEMO: aggregation endpoint is not configured, so nothing was sent.";
+
+      return;
+
+    }
+
+
+    try{
+
+      await fetch(
+        AGGREGATION_ENDPOINT,
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify(payload),
+          keepalive:true
+        }
+      );
+
+      $("sendStatus").textContent=
+        "ANONYMOUS AGGREGATE SUBMITTED.";
+
+    }catch(e){
+
+      $("sendStatus").textContent=
+        "SUBMISSION FAILED. NOTHING ELSE WAS RETRIED.";
+
+    }
+
+  };
+
+
+/* =========================================================
+   HASH
+   ========================================================= */
+
+async function hash(s){
+
+  const b=
+    new TextEncoder().encode(s);
+
+  const h=
+    await crypto.subtle.digest(
+      "SHA-256",
+      b
+    );
+
+  return[
+    ...new Uint8Array(h)
+  ]
+    .map(
+      x=>x.toString(16).padStart(2,"0")
+    )
+    .join("");
+
+}
+
+
+/* =========================================================
+   SHARED RESULT
+   ========================================================= */
+
+function loadShared(){
+
+  const m=
+    location.hash.match(
+      /^#result=(.+)$/
+    );
+
+  if(!m)return;
+
+
+  try{
+
+    const p=
+      JSON.parse(
+        decodeURIComponent(
+          escape(
+            atob(m[1])
+          )
+        )
+      );
+
+
+    state.name=
+      p.name ||
+      "Shared Subject";
+
+
+    $("resultName").textContent=
+      state.name;
+
+
+    $("archetype").textContent=
+      p.archetype ||
+      "UNKNOWN";
+
+
+    $("archetypeCode").textContent=
+      p.code ||
+      "SHARED";
+
+
+    $("matchScore").textContent=
+      p.score ||
+      "—";
+
+
+    $("description").textContent=
+      "This result was shared with you. Run the machine yourself to receive a complete personal dossier.";
+
+
+    $("jungStats").innerHTML="";
+
+    $("bigFive").innerHTML="";
+
+    $("ranking").innerHTML=
+      `<div class="rank">
+        <span>01</span>
+        <b>${p.archetype}</b>
+        <span>${p.score}%</span>
+      </div>`;
+
+
+    $("campusStats").innerHTML="";
+
+
+    state.factIndex=
+      Math.floor(
+        Math.random()*FACTS.length
+      );
+
+
+    renderFact();
+
+    show("result");
+
+
+  }catch(e){
+
+    console.error(
+      "Shared result error:",
+      e
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   DOM READY
+   ========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  ()=>{
+
+    const n=
+      localStorage.getItem(
+        "vp_name"
+      );
+
+    if(
+      n &&
+      $("userName")
+    ){
+
+      $("userName").value=n;
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   LOAD SHARED RESULT
+   ========================================================= */
+
+loadShared();
