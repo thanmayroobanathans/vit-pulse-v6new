@@ -1,40 +1,1123 @@
-/* ============================================================
-   HELDENMUNT BOYS — CAMPUS MACHINE
-   Personality Classification Engine
-   ------------------------------------------------------------
-   Fictional entertainment software.
-   Browser-side classification.
-   No clinical diagnosis.
-   ============================================================ */
+import {
+  auth,
+  db,
+  loginWithGoogle,
+  handleRedirectLogin,
+  watchAuth,
+  logout
+} from "./firebase-app.js";
 
-"use strict";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+  collection,
+  addDoc,
+  deleteDoc
+} from
+  "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-/* ============================================================
-   QUESTIONS
-   ============================================================ */
 
-const QUESTIONS = [
-  ["Two free hours on campus. Where do you go?",
-    ["Somewhere I have never been","A place with my people","A quiet place to think","Finish something"],
-    ["O","E","I","C"],"CAMPUS"],
+/* ==================================================
+   DOM
+================================================== */
 
-  ["SJT / Amazon feels:",
-    ["Crowded and energetic","Social and convenient","Chaotic but useful","I avoid crowds"],
-    ["E","E","O","I"],"SJT / AMAZON"],
+const loginScreen =
+  document.getElementById("login-screen");
 
-  ["A friend changes tonight's plan last minute.",
-    ["Excellent. Improvise.","Who is coming?","Why change it?","Give me details."],
-    ["N","E","C","C"],"SOCIAL"],
+const application =
+  document.getElementById("application");
 
-  ["A difficult optional problem appears.",
-    ["I have to solve it.","Maybe with friends.","Later.","I get curious immediately."],
-    ["T","E","C","N"],"ACADEMIC"],
+const googleButton =
+  document.getElementById("googleLogin");
 
-  ["Which campus atmosphere attracts you?",
-    ["Busy and alive","Quiet and focused","Unpredictable","Organized"],
-    ["E","I","N","C"],"VIBE"],
+const authStatus =
+  document.getElementById("authStatus");
 
-  ["Your group project is falling apart.",
+const authPanel =
+  document.getElementById("authPanel");
+
+const userName =
+  document.getElementById("userName");
+
+const beginButton =
+  document.getElementById("begin");
+
+
+/* ==================================================
+   SCREEN CONTROL
+================================================== */
+
+function showLoginScreen() {
+
+  if (loginScreen) {
+    loginScreen.style.display = "flex";
+  }
+
+  if (application) {
+    application.style.display = "none";
+  }
+}
+
+
+function hideLoginScreen() {
+
+  if (loginScreen) {
+    loginScreen.style.display = "none";
+  }
+
+  if (application) {
+    application.style.display = "block";
+  }
+}
+
+
+/* ==================================================
+   ERROR MESSAGE
+================================================== */
+
+function firebaseError(error) {
+
+  console.error(error);
+
+  if (!authStatus) return;
+
+  switch (error.code) {
+
+    case "auth/unauthorized-domain":
+
+      authStatus.textContent =
+        "ERROR: THIS GITHUB PAGES DOMAIN IS NOT AUTHORIZED IN FIREBASE.";
+
+      break;
+
+    case "auth/operation-not-allowed":
+
+      authStatus.textContent =
+        "ERROR: GOOGLE SIGN-IN IS NOT ENABLED IN FIREBASE.";
+
+      break;
+
+    case "auth/invalid-api-key":
+
+      authStatus.textContent =
+        "ERROR: INVALID FIREBASE API KEY.";
+
+      break;
+
+    case "auth/network-request-failed":
+
+      authStatus.textContent =
+        "ERROR: NETWORK REQUEST FAILED.";
+
+      break;
+
+    case "auth/popup-blocked":
+
+      authStatus.textContent =
+        "POPUP BLOCKED — REDIRECT LOGIN WILL BE USED.";
+
+      break;
+
+    default:
+
+      authStatus.textContent =
+        "GOOGLE SIGN-IN FAILED: " +
+        (error.message || error.code || "UNKNOWN ERROR");
+  }
+}
+
+
+/* ==================================================
+   GOOGLE LOGIN BUTTON
+================================================== */
+
+if (googleButton) {
+
+  googleButton.addEventListener(
+    "click",
+    async () => {
+
+      googleButton.disabled = true;
+
+      googleButton.textContent =
+        "CONNECTING TO GOOGLE...";
+
+      if (authStatus) {
+
+        authStatus.textContent =
+          "CONTACTING GOOGLE...";
+      }
+
+      try {
+
+        await loginWithGoogle();
+
+      } catch (error) {
+
+        firebaseError(error);
+
+        googleButton.disabled = false;
+
+        googleButton.textContent =
+          "CONTINUE WITH GOOGLE";
+      }
+
+    }
+  );
+}
+
+
+/* ==================================================
+   AUTH STATE
+================================================== */
+
+watchAuth(async (user) => {
+
+  if (user) {
+
+    console.log(
+      "AUTHENTICATED USER:",
+      user.uid,
+      user.email
+    );
+
+    hideLoginScreen();
+
+    if (authPanel) {
+
+      authPanel.textContent =
+        "AUTHENTICATED SESSION // " +
+        (user.displayName || user.email);
+    }
+
+    /*
+      Automatically use Google display name
+      if the user has not entered one yet.
+    */
+
+    if (
+      userName &&
+      !userName.value.trim()
+    ) {
+
+      userName.value =
+        user.displayName || "";
+    }
+
+    return;
+  }
+
+  showLoginScreen();
+
+});
+
+
+/* ==================================================
+   HANDLE REDIRECT LOGIN
+================================================== */
+
+(async function () {
+
+  try {
+
+    await handleRedirectLogin();
+
+  } catch (error) {
+
+    firebaseError(error);
+
+  }
+
+})();
+
+
+/* ==================================================
+   QUIZ DATA
+================================================== */
+
+const questions = [
+
+  {
+    domain: "SOCIAL ENERGY",
+    question: "A free evening suddenly appears. What happens?",
+    options: [
+      "I find people immediately.",
+      "I message one or two people.",
+      "I decide depending on my mood.",
+      "I disappear completely."
+    ],
+    axis: "social"
+  },
+
+  {
+    domain: "DECISION",
+    question: "When something important happens, you usually...",
+    options: [
+      "Act immediately.",
+      "Think briefly, then act.",
+      "Ask someone I trust.",
+      "Analyse everything first."
+    ],
+    axis: "decision"
+  },
+
+  {
+    domain: "RISK",
+    question: "Someone suggests a completely spontaneous plan.",
+    options: [
+      "Absolutely. Let's go.",
+      "Probably.",
+      "I need details first.",
+      "No chance."
+    ],
+    axis: "risk"
+  },
+
+  {
+    domain: "AMBITION",
+    question: "You see someone doing extremely well.",
+    options: [
+      "I want to beat them.",
+      "I want to learn from them.",
+      "I admire them.",
+      "I don't really care."
+    ],
+    axis: "ambition"
+  },
+
+  {
+    domain: "CONFLICT",
+    question: "A friend confronts you unexpectedly.",
+    options: [
+      "I confront them back.",
+      "I try to understand.",
+      "I become defensive.",
+      "I avoid the situation."
+    ],
+    axis: "conflict"
+  },
+
+  {
+    domain: "DISCIPLINE",
+    question: "You have an important deadline tomorrow.",
+    options: [
+      "Finished days ago.",
+      "I'll finish tonight.",
+      "I'll probably panic later.",
+      "I work best at the last second."
+    ],
+    axis: "discipline"
+  },
+
+  {
+    domain: "CURIOSITY",
+    question: "You encounter something you don't understand.",
+    options: [
+      "I immediately investigate.",
+      "I save it for later.",
+      "I ask someone.",
+      "I ignore it."
+    ],
+    axis: "curiosity"
+  },
+
+  {
+    domain: "LOYALTY",
+    question: "A close friend makes a serious mistake.",
+    options: [
+      "I defend them.",
+      "I tell them honestly.",
+      "I stay neutral.",
+      "I distance myself."
+    ],
+    axis: "loyalty"
+  },
+
+  {
+    domain: "CONTROL",
+    question: "Your plan suddenly changes.",
+    options: [
+      "I make a new plan instantly.",
+      "I adapt.",
+      "I get annoyed.",
+      "I hate it."
+    ],
+    axis: "control"
+  },
+
+  {
+    domain: "COMPETITION",
+    question: "Someone challenges you.",
+    options: [
+      "Game on.",
+      "Depends who it is.",
+      "I'll compete if necessary.",
+      "I'd rather cooperate."
+    ],
+    axis: "competition"
+  },
+
+  {
+    domain: "CREATIVITY",
+    question: "You are given a completely blank page.",
+    options: [
+      "Ideas immediately appear.",
+      "I experiment.",
+      "I need an example.",
+      "I prefer instructions."
+    ],
+    axis: "creativity"
+  },
+
+  {
+    domain: "LEADERSHIP",
+    question: "A group has no leader.",
+    options: [
+      "I take charge.",
+      "I organise quietly.",
+      "Someone else should lead.",
+      "I work alone."
+    ],
+    axis: "leadership"
+  },
+
+  {
+    domain: "STRESS",
+    question: "When pressure rises, you...",
+    options: [
+      "Become extremely focused.",
+      "Keep going normally.",
+      "Get restless.",
+      "Freeze."
+    ],
+    axis: "stress"
+  },
+
+  {
+    domain: "SOCIAL SIGNAL",
+    question: "At a large event you usually...",
+    options: [
+      "Know everyone.",
+      "Meet new people.",
+      "Stay with familiar people.",
+      "Find somewhere quiet."
+    ],
+    axis: "social"
+  },
+
+  {
+    domain: "MONEY",
+    question: "You unexpectedly receive ₹10,000.",
+    options: [
+      "Invest it.",
+      "Save most of it.",
+      "Buy something useful.",
+      "Spend it on experiences."
+    ],
+    axis: "ambition"
+  },
+
+  {
+    domain: "FAILURE",
+    question: "You fail at something important.",
+    options: [
+      "Try again immediately.",
+      "Study what went wrong.",
+      "Take a break.",
+      "Move on."
+    ],
+    axis: "discipline"
+  },
+
+  {
+    domain: "TRUST",
+    question: "Someone tells you a secret.",
+    options: [
+      "It stays with me forever.",
+      "Only close friends might know.",
+      "I forget about it.",
+      "I don't like secrets."
+    ],
+    axis: "loyalty"
+  },
+
+  {
+    domain: "PLANNING",
+    question: "Your ideal trip is...",
+    options: [
+      "Fully spontaneous.",
+      "Mostly planned.",
+      "Detailed itinerary.",
+      "I don't care as long as it works."
+    ],
+    axis: "control"
+  },
+
+  {
+    domain: "ARGUMENT",
+    question: "During an argument you care most about...",
+    options: [
+      "Winning.",
+      "Being understood.",
+      "Finding the truth.",
+      "Ending the argument."
+    ],
+    axis: "conflict"
+  },
+
+  {
+    domain: "LEARNING",
+    question: "You learn best when...",
+    options: [
+      "I experiment myself.",
+      "Someone explains it.",
+      "I read about it.",
+      "I practise repeatedly."
+    ],
+    axis: "curiosity"
+  },
+
+  {
+    domain: "RISK",
+    question: "Would you try something with a 50% chance of failure?",
+    options: [
+      "Yes.",
+      "Probably.",
+      "Only if the reward is high.",
+      "No."
+    ],
+    axis: "risk"
+  },
+
+  {
+    domain: "AUTHORITY",
+    question: "A rule seems pointless.",
+    options: [
+      "Ignore it.",
+      "Question it.",
+      "Follow it anyway.",
+      "Find a workaround."
+    ],
+    axis: "control"
+  },
+
+  {
+    domain: "FRIENDSHIP",
+    question: "Your ideal friend group is...",
+    options: [
+      "Huge.",
+      "A few close people.",
+      "Different groups.",
+      "One best friend."
+    ],
+    axis: "social"
+  },
+
+  {
+    domain: "FUTURE",
+    question: "Thinking about five years from now feels...",
+    options: [
+      "Exciting.",
+      "Motivating.",
+      "Unclear.",
+      "Irrelevant."
+    ],
+    axis: "ambition"
+  },
+
+  {
+    domain: "IDEAS",
+    question: "A strange idea appears in your head.",
+    options: [
+      "I immediately build it.",
+      "I research it.",
+      "I tell someone.",
+      "I forget it."
+    ],
+    axis: "creativity"
+  },
+
+  {
+    domain: "GROUPS",
+    question: "During group projects you usually become...",
+    options: [
+      "The leader.",
+      "The specialist.",
+      "The organiser.",
+      "The quiet contributor."
+    ],
+    axis: "leadership"
+  },
+
+  {
+    domain: "PRESSURE",
+    question: "The exam is tomorrow and you know little.",
+    options: [
+      "Full speed.",
+      "Prioritise important topics.",
+      "Ask friends for help.",
+      "Accept defeat."
+    ],
+    axis: "stress"
+  },
+
+  {
+    domain: "COMPETITION",
+    question: "Your friend gets a higher score.",
+    options: [
+      "I want the next win.",
+      "I congratulate them.",
+      "I analyse the difference.",
+      "Good for them."
+    ],
+    axis: "competition"
+  },
+
+  {
+    domain: "CHANGE",
+    question: "You move somewhere completely new.",
+    options: [
+      "Explore everything.",
+      "Build a routine.",
+      "Find familiar people.",
+      "Stay in my room."
+    ],
+    axis: "risk"
+  },
+
+  {
+    domain: "WORK",
+    question: "Your perfect working environment is...",
+    options: [
+      "Fast and chaotic.",
+      "Structured.",
+      "Quiet.",
+      "Social."
+    ],
+    axis: "discipline"
+  },
+
+  {
+    domain: "VALUES",
+    question: "What matters most when making a difficult decision?",
+    options: [
+      "Results.",
+      "People.",
+      "Principles.",
+      "Freedom."
+    ],
+    axis: "decision"
+  },
+
+  {
+    domain: "EXPERIENCE",
+    question: "Would you rather have...",
+    options: [
+      "More money.",
+      "More knowledge.",
+      "More experiences.",
+      "More free time."
+    ],
+    axis: "ambition"
+  },
+
+  {
+    domain: "SOLITUDE",
+    question: "Being alone for an entire day feels...",
+    options: [
+      "Amazing.",
+      "Fine.",
+      "A little strange.",
+      "Terrible."
+    ],
+    axis: "social"
+  },
+
+  {
+    domain: "MISTAKES",
+    question: "Someone criticises your work.",
+    options: [
+      "Prove them wrong.",
+      "Use the criticism.",
+      "Ask for details.",
+      "Ignore it."
+    ],
+    axis: "conflict"
+  },
+
+  {
+    domain: "CURIOSITY",
+    question: "If you had unlimited time, you'd probably...",
+    options: [
+      "Build something.",
+      "Learn something.",
+      "Travel.",
+      "Relax."
+    ],
+    axis: "curiosity"
+  },
+
+  {
+    domain: "IDENTITY",
+    question: "Which statement feels closest?",
+    options: [
+      "I make things happen.",
+      "I understand things deeply.",
+      "I connect people.",
+      "I observe everything."
+    ],
+    axis: "leadership"
+  }
+
+];
+
+
+/* ==================================================
+   ARCHETYPES
+================================================== */
+
+const archetypes = [
+
+  {
+    name: "THE ARCHITECT",
+    code: "HB-A01",
+    description:
+      "A strategic builder who prefers systems, structure and long-term control.",
+    axes: {
+      leadership: 9,
+      discipline: 9,
+      curiosity: 8,
+      control: 9,
+      ambition: 8
+    }
+  },
+
+  {
+    name: "THE OPERATOR",
+    code: "HB-A02",
+    description:
+      "You move quickly, make decisions and turn plans into action.",
+    axes: {
+      leadership: 9,
+      ambition: 9,
+      competition: 9,
+      risk: 8,
+      discipline: 8
+    }
+  },
+
+  {
+    name: "THE EXPLORER",
+    code: "HB-A03",
+    description:
+      "Curiosity and experience pull you toward unfamiliar territory.",
+    axes: {
+      curiosity: 10,
+      risk: 9,
+      creativity: 9,
+      social: 7
+    }
+  },
+
+  {
+    name: "THE DIPLOMAT",
+    code: "HB-A04",
+    description:
+      "You understand people, negotiate tension and keep groups connected.",
+    axes: {
+      social: 9,
+      loyalty: 9,
+      conflict: 8,
+      leadership: 7
+    }
+  },
+
+  {
+    name: "THE ANALYST",
+    code: "HB-A05",
+    description:
+      "You naturally dissect problems before committing to an answer.",
+    axes: {
+      curiosity: 10,
+      discipline: 8,
+      control: 8,
+      decision: 9
+    }
+  },
+
+  {
+    name: "THE MAVERICK",
+    code: "HB-A06",
+    description:
+      "You dislike unnecessary constraints and prefer creating your own route.",
+    axes: {
+      risk: 10,
+      creativity: 9,
+      independence: 10,
+      control: 3
+    }
+  },
+
+  {
+    name: "THE COMMANDER",
+    code: "HB-A07",
+    description:
+      "Competition energises you and responsibility tends to find you.",
+    axes: {
+      leadership: 10,
+      ambition: 10,
+      competition: 10,
+      discipline: 8
+    }
+  },
+
+  {
+    name: "THE OBSERVER",
+    code: "HB-A08",
+    description:
+      "You notice patterns, details and signals other people overlook.",
+    axes: {
+      curiosity: 9,
+      discipline: 8,
+      social: 4,
+      control: 8
+    }
+  },
+
+  {
+    name: "THE CONNECTOR",
+    code: "HB-A09",
+    description:
+      "People, conversations and relationships are where your energy compounds.",
+    axes: {
+      social: 10,
+      loyalty: 9,
+      leadership: 7,
+      creativity: 8
+    }
+  },
+
+  {
+    name: "THE BUILDER",
+    code: "HB-A10",
+    description:
+      "You prefer tangible progress and quietly turning ideas into reality.",
+    axes: {
+      discipline: 10,
+      creativity: 8,
+      ambition: 8,
+      control: 8
+    }
+  }
+];
+
+
+/* ==================================================
+   QUIZ STATE
+================================================== */
+
+let currentQuestion = 0;
+
+let answers = [];
+
+let scores = {};
+
+let streak = 0;
+
+let currentResult = null;
+
+
+/* ==================================================
+   INITIALISE SCORES
+================================================== */
+
+function resetScores() {
+
+  scores = {};
+
+  const axes = [
+    "social",
+    "decision",
+    "risk",
+    "ambition",
+    "conflict",
+    "discipline",
+    "curiosity",
+    "loyalty",
+    "control",
+    "competition",
+    "creativity",
+    "leadership",
+    "stress",
+    "independence"
+  ];
+
+  axes.forEach(axis => {
+    scores[axis] = 0;
+  });
+}
+
+
+/* ==================================================
+   SCREEN NAVIGATION
+================================================== */
+
+function showScreen(id) {
+
+  document
+    .querySelectorAll(".screen")
+    .forEach(screen => {
+
+      screen.classList.remove("active");
+
+    });
+
+  const target =
+    document.getElementById(id);
+
+  if (target) {
+    target.classList.add("active");
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+
+/* ==================================================
+   BEGIN
+================================================== */
+
+if (beginButton) {
+
+  beginButton.addEventListener(
+    "click",
+    () => {
+
+      if (!auth.currentUser) {
+
+        alert(
+          "Please sign in with Google first."
+        );
+
+        showLoginScreen();
+
+        return;
+      }
+
+      const name =
+        userName?.value.trim();
+
+      if (!name) {
+
+        userName.focus();
+
+        alert(
+          "Enter your subject name first."
+        );
+
+        return;
+      }
+
+      currentQuestion = 0;
+
+      answers = [];
+
+      streak = 0;
+
+      resetScores();
+
+      showScreen("quiz");
+
+      renderQuestion();
+
+    }
+  );
+}
+
+
+/* ==================================================
+   RENDER QUESTION
+================================================== */
+
+function renderQuestion() {
+
+  const q =
+    questions[currentQuestion];
+
+  if (!q) {
+
+    finishQuiz();
+
+    return;
+  }
+
+  const progress =
+    document.getElementById("progress");
+
+  const state =
+    document.getElementById("state");
+
+  const tape =
+    document.getElementById("tape");
+
+  const domain =
+    document.getElementById("domain");
+
+  const question =
+    document.getElementById("question");
+
+  const options =
+    document.getElementById("options");
+
+  const streakElement =
+    document.getElementById("streak");
+
+  const machineNote =
+    document.getElementById("machineNote");
+
+  if (progress) {
+
+    progress.textContent =
+      `INPUT ${String(currentQuestion + 1).padStart(2, "0")} / ${questions.length}`;
+  }
+
+  if (state) {
+
+    state.textContent =
+      `STATE q${currentQuestion}`;
+  }
+
+  if (tape) {
+
+    tape.style.width =
+      `${(currentQuestion / questions.length) * 100}%`;
+  }
+
+  if (domain) {
+    domain.textContent =
+      q.domain;
+  }
+
+  if (question) {
+    question.textContent =
+      q.question;
+  }
+
+  if (streakElement) {
+
+    streakElement.textContent =
+      `CHAIN ${streak}`;
+  }
+
+  if (machineNote) {
+
+    machineNote.textContent =
+      currentQuestion === 0
+        ? "MACHINE INITIALIZED."
+        : "PATTERN DETECTED // CONTINUE.";
+  }
+
+  if (!options) return;
+
+  options.innerHTML = "";
+
+  q.options.forEach(
+    (optionText, index) => {
+
+      const button =
+        document.createElement("button");
+
+      button.className =
+        "option";
+
+      button.type =
+        "button";
+
+      button.textContent =
+        `${String.fromCharCode(65 + index)} — ${optionText}`;
+
+      button.addEventListener(
+        "click",
+        () => answerQuestion(index)
+      );
+
+      options.appendChild(button);
+
+    }
+  );
+}
+
+
+/* ==================================================
+   ANSWER
+================================================== */
+
+function answerQuestion(index) {
+
+  const q =
+    questions[currentQuestion];
+
+  answers.push({
+    question: currentQuestion,
+    answer: index,
+    axis: q.axis
+  });
+
+  /*
+    First option generally indicates
+    stronger/high-energy behaviour.
+  */
+
+  const strength =
+    4 - index;
+
+  if (
+    typeof scores[q.axis] !== "number"
+  ) {
+
+    scores[q.axis] = 0;
+  }
+
+  scores[q.axis] += strength;
+
+  /*
+    Option A receives an additional
+    independence signal.
+  */
+
+  if (index === 0) {
+
+    scores.independence += 2;
+
+    streak++;
+
+  } else {
+
+    streak = 0;
+  }
+
+  currentQuestion++;
+
+  renderQuestion();
+}
+
+
+/* ==================================================
+   CALCULATE ARCHETYPE
+================================================== */
+
+function calculateArchetype() {
+
+  let best =
+    null;
+
+  let bestScore =
+    ["Your group project is falling apart.",
     ["Take command.","Calm everyone.","Fix my part quietly.","Try a different approach."],
     ["E","F","C","N"],"GROUP"],
 
