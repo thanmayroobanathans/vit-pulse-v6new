@@ -105,3 +105,4 @@ if (document.readyState === "loading") {
 }
 
 export { auth, db, loginWithGoogle };
+alert("AUTH GATE LOADED");
