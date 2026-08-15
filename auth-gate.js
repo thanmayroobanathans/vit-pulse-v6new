@@ -1,8 +1,10 @@
-import { auth, loginWithGoogle } from "./firebase-app.js";
+import { auth, loginWithGoogle }
+from "./firebase-app.js";
 
 import {
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+} from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
 const loginScreen =
@@ -23,18 +25,21 @@ function showLogin() {
   loginScreen.style.display = "flex";
 
   application.style.display = "none";
+
 }
 
 
 function showApplication(user) {
 
+  console.log(
+    "AUTHENTICATED USER:",
+    user
+  );
+
   loginScreen.style.display = "none";
 
   application.style.display = "block";
 
-
-  // Automatically use Google account name
-  // if the user hasn't entered one yet.
 
   const nameInput =
     document.getElementById("userName");
@@ -44,11 +49,12 @@ function showApplication(user) {
     !nameInput.value &&
     user.displayName
   ) {
-    nameInput.value = user.displayName;
+
+    nameInput.value =
+      user.displayName;
+
   }
 
-
-  // Show authenticated status
 
   if (authStatus) {
 
@@ -56,12 +62,24 @@ function showApplication(user) {
       `AUTHENTICATED // ${user.email}`;
 
   }
+
+
+  // Tell the rest of VIT PULSE that
+  // authentication is complete.
+
+  window.dispatchEvent(
+    new CustomEvent(
+      "vitpulse:authenticated",
+      {
+        detail: {
+          user
+        }
+      }
+    )
+  );
+
 }
 
-
-// ============================================
-// GOOGLE BUTTON
-// ============================================
 
 googleButton.addEventListener(
   "click",
@@ -70,13 +88,7 @@ googleButton.addEventListener(
     googleButton.disabled = true;
 
     googleButton.textContent =
-      "AUTHENTICATING...";
-
-    if (authStatus) {
-
-      authStatus.textContent =
-        "CONTACTING GOOGLE...";
-    }
+      "REDIRECTING TO GOOGLE...";
 
     try {
 
@@ -84,29 +96,20 @@ googleButton.addEventListener(
 
     } catch (error) {
 
-      console.error(
-        "Google authentication error:",
-        error
-      );
+      console.error(error);
 
       googleButton.disabled = false;
 
       googleButton.textContent =
-        "CONTINUE WITH GOOGLE";
+        "SIGN IN WITH GOOGLE";
 
-      if (authStatus) {
-
-        authStatus.textContent =
-          "AUTHENTICATION FAILED — TRY AGAIN";
-      }
+      authStatus.textContent =
+        "LOGIN FAILED — TRY AGAIN";
     }
+
   }
 );
 
-
-// ============================================
-// AUTHENTICATION STATE
-// ============================================
 
 onAuthStateChanged(
   auth,
@@ -114,20 +117,13 @@ onAuthStateChanged(
 
     if (user) {
 
-      console.log(
-        "VIT PULSE authenticated:",
-        user.uid
-      );
-
       showApplication(user);
 
     } else {
 
-      console.log(
-        "VIT PULSE: authentication required"
-      );
-
       showLogin();
+
     }
+
   }
 );
