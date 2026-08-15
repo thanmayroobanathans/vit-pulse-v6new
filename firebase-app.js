@@ -4,8 +4,8 @@ import { initializeApp } from
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
+  onAuthStateChanged,
   signOut
 } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -23,60 +23,213 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-
-const googleProvider =
-  new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
 
 googleProvider.setCustomParameters({
   prompt: "select_account"
 });
 
 
+// ==================================================
+// GOOGLE LOGIN
+// ==================================================
+
 export async function loginWithGoogle() {
 
-  await signInWithRedirect(
-    auth,
-    googleProvider
-  );
+  try {
+
+    const result = await signInWithPopup(
+      auth,
+      googleProvider
+    );
+
+    console.log(
+      "Google authentication successful:",
+      result.user.displayName
+    );
+
+    return result.user;
+
+  } catch (error) {
+
+    console.error("Google login error:", error);
+
+    let message = "Google sign-in failed.";
+
+    if (error.code === "auth/popup-blocked") {
+      message =
+        "Google sign-in was blocked by your browser. Allow pop-ups and try again.";
+    }
+
+    if (error.code === "auth/popup-closed-by-user") {
+      message =
+        "Google sign-in was cancelled.";
+    }
+
+    if (error.code === "auth/unauthorized-domain") {
+      message =
+        "This website domain is not authorized in Firebase Authentication.";
+    }
+
+    if (error.code === "auth/invalid-api-key") {
+      message =
+        "Firebase configuration contains an invalid API key.";
+    }
+
+    alert(message);
+
+    throw error;
+  }
 }
 
 
-// Process the Google redirect
+// ==================================================
+// AUTH STATE
+// ==================================================
 
-getRedirectResult(auth)
-  .then((result) => {
+export function requireGoogleLogin(callback) {
 
-    if (result?.user) {
+  onAuthStateChanged(auth, (user) => {
+
+    if (user) {
 
       console.log(
-        "GOOGLE LOGIN SUCCESS:",
-        result.user.email
+        "AUTHENTICATED:",
+        user.displayName,
+        user.email
       );
 
+      hideLoginScreen();
+
+      callback(user);
+
+    } else {
+
+      showLoginScreen();
+
     }
 
-  })
-  .catch((error) => {
-
-    console.error(
-      "GOOGLE REDIRECT ERROR:",
-      error
-    );
-
-    const status =
-      document.getElementById("authStatus");
-
-    if (status) {
-
-      status.textContent =
-        "GOOGLE LOGIN ERROR: " +
-        error.code;
-    }
   });
 
+}
+
+
+// ==================================================
+// LOGIN SCREEN
+// ==================================================
+
+function showLoginScreen() {
+
+  const loginScreen =
+    document.getElementById("login-screen");
+
+  if (loginScreen) {
+    loginScreen.style.display = "flex";
+  }
+
+  const application =
+    document.getElementById("application");
+
+  if (application) {
+    application.style.display = "block";
+  }
+
+}
+
+
+// ==================================================
+// HIDE LOGIN SCREEN
+// ==================================================
+
+function hideLoginScreen() {
+
+  const loginScreen =
+    document.getElementById("login-screen");
+
+  if (loginScreen) {
+    loginScreen.style.display = "none";
+  }
+
+  const application =
+    document.getElementById("application");
+
+  if (application) {
+    application.style.display = "block";
+  }
+
+}
+
+
+// ==================================================
+// LOGOUT
+// ==================================================
 
 export async function logout() {
 
-  await signOut(auth);
+  try {
+
+    await signOut(auth);
+
+    showLoginScreen();
+
+  } catch (error) {
+
+    console.error(
+      "Logout failed:",
+      error
+    );
+
+  }
 
 }
+
+
+// ==================================================
+// LOGIN BUTTON
+// ==================================================
+
+const googleButton =
+  document.getElementById("google-login");
+
+if (googleButton) {
+
+  googleButton.addEventListener(
+    "click",
+    async () => {
+
+      googleButton.disabled = true;
+
+      googleButton.textContent =
+        "CONNECTING TO GOOGLE...";
+
+      try {
+
+        await loginWithGoogle();
+
+      } finally {
+
+        googleButton.disabled = false;
+
+        googleButton.textContent =
+          "CONTINUE WITH GOOGLE";
+
+      }
+
+    }
+  );
+
+}
+
+
+// ==================================================
+// START AUTH GUARD
+// ==================================================
+
+requireGoogleLogin((user) => {
+
+  console.log(
+    "VIT PULSE USER:",
+    user.uid
+  );
+
+});
