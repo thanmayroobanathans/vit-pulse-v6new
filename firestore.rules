@@ -1,10 +1,26 @@
 rules_version = '2';
+
 service cloud.firestore {
+
   match /databases/{database}/documents {
+
+    // User profile / personality result
     match /participants/{uid} {
+
       allow create, read, update, delete:
-        if request.auth != null && request.auth.uid == uid;
+        if request.auth != null
+        && request.auth.uid == uid;
+
+      // User's own current location
+      match /location/{locationId} {
+
+        allow create, read, update, delete:
+          if request.auth != null
+          && request.auth.uid == uid;
+      }
     }
+
+    // Nobody can directly read/write aggregate data
     match /aggregates/{doc} {
       allow read, write: if false;
     }
