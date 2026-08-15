@@ -1,8 +1,21 @@
-# Setup
+# VIT Pulse / Heldenmunt Boys setup
 
-1. Firebase Console → Authentication → Sign-in method → enable Google.
-2. Firebase Console → Authentication → Settings → Authorized domains → add `thanmayroobanathans.github.io`.
-3. Firebase Console → Firestore Database → Rules → paste `firestore.rules`.
-4. Put every file in this folder in the GitHub Pages repository root.
-5. Open `https://thanmayroobanathans.github.io/vit-pulse-v6new/`.
-6. Hard-refresh once after deployment.
+## 1. Firebase config
+Open `firebase-config.js` and replace every placeholder with the config from Firebase Console > Project settings > Your apps > Web app.
+
+## 2. Firebase Authentication
+Firebase Console > Authentication > Sign-in method > Google > Enable.
+
+Add these authorized domains:
+- `thanmayroobanathans.github.io`
+- `YOUR_PROJECT_ID.firebaseapp.com`
+
+For GitHub Pages, the app uses Google redirect sign-in instead of a popup.
+
+## 3. Firestore
+Create a Firestore database and deploy `firestore.rules`.
+
+## 4. GitHub Pages
+Upload all files in this folder. Do not rename `firebase-config.js`.
+
+The browser entry point is `index.html`.

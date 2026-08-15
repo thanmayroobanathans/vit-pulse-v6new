@@ -1,339 +1,1056 @@
-import {
-  auth, db, googleProvider,
-  signInWithPopup, signInWithRedirect, getRedirectResult,
-  onAuthStateChanged, signOut, doc, setDoc, serverTimestamp
-} from "./firebase-app.js";
+/* ============================================================
+   HELDENMUNT BOYS — CAMPUS MACHINE
+   Personality Classification Engine
+   ------------------------------------------------------------
+   Fictional entertainment software.
+   Browser-side classification.
+   No clinical diagnosis.
+   ============================================================ */
 
-const $ = id => document.getElementById(id);
+"use strict";
 
-const questions = [
-["SOCIAL","You arrive at a crowded campus event. Your first move?",["Find someone you know","Talk to someone new","Observe the room first","Leave if the energy feels wrong"]]],
-["DECISION","A difficult choice has no perfect answer. You...",["Pick quickly and adapt","List the pros and cons","Ask someone you trust","Wait for more information"]]],
-["ENERGY","After a long day, you recover by...",["Being around people","Going somewhere alone","Doing something physical","Getting lost in music or a screen"]]],
-["WORK","A deadline is tomorrow. You...",["Start immediately","Plan the entire sequence","Work intensely at the last minute","Ask others how they are approaching it"]]],
-["RISK","A new opportunity looks exciting but uncertain.",["Take it","Research it","Ask someone experienced","Ignore it unless the upside is obvious"]]],
-["ARGUMENT","During an argument you tend to...",["Say what you think directly","Try to understand both sides","Go quiet","Make a joke and defuse it"]]],
-["CURIOSITY","A topic catches your attention.",["Deep dive immediately","Save it for later","Discuss it with someone","Move on to the next interesting thing"]]],
-["CAMPUS","You have a free hour on campus.",["Explore somewhere new","Study","Meet friends","Rest"]]],
-["RULES","A rule seems inefficient.",["Challenge it","Work around it","Follow it","Find out why it exists"]]],
-["PRESSURE","Under pressure you become...",["More focused","More analytical","More emotional","More impulsive"]]],
-["FRIENDS","A good friend is someone who...",["Pushes you forward","Understands you","Makes you laugh","Is dependable"]]],
-["MONEY","You receive unexpected money.",["Save it","Invest it","Spend it on an experience","Buy something useful"]]],
-["FAILURE","A plan fails.",["Try again immediately","Analyze what went wrong","Ask for feedback","Move to a new plan"]]],
-["LEARNING","You learn fastest when...",["Solving problems","Seeing examples","Explaining it","Practicing repeatedly"]]],
-["COMPETITION","Someone is clearly better than you at something.",["Compete harder","Study their method","Respect their skill","Find another arena"]]],
-["TIME","You have three tasks and one hour.",["Do the hardest first","Rank by importance","Do the fastest first","Choose by instinct"]]],
-["AUTHORITY","A senior gives you advice you disagree with.",["Say so","Consider it privately","Follow it for now","Ask questions"]]],
-["NOVELTY","A completely unfamiliar situation appears.",["Exciting","Interesting","Stressful","Depends on who is there"]]],
-["COMMUNICATION","When texting you usually...",["Reply instantly","Write carefully","Forget and reply later","Send short messages"]]],
-["AESTHETIC","Your ideal workspace is...",["Minimal","Organized","Comfortable","Chaotic but functional"]]],
-["GOALS","A major goal feels far away.",["Break it into steps","Visualize the result","Start anyway","Find a partner"]]],
-["CONFLICT","Two friends are fighting.",["Intervene","Listen to both","Stay out","Make them laugh"]]],
-["SLEEP","You have an early morning.",["Sleep early","Set multiple alarms","Stay up until tired","Wake naturally"]]],
-["TECH","A new app is confusing.",["Experiment","Read instructions","Watch a tutorial","Ask someone"]]],
-["LEADERSHIP","A group has no leader.",["Take charge","Suggest a plan","Wait for consensus","Support whoever emerges"]]],
-["BOREDOM","You are bored.",["Start a project","Scroll","Go outside","Call someone"]]],
-["TRUTH","A truth might hurt someone.",["Say it honestly","Soften it","Wait for the right moment","Don't say it unless necessary"]]],
-["CHANGE","Your routine suddenly changes.",["Adapt","Rebuild the schedule","Feel annoyed","Enjoy the disruption"]]],
-["MEMORY","You remember things best by...",["Doing them","Writing them","Talking about them","Seeing them"]]],
-["STATUS","Recognition matters to you...",["A lot","Somewhat","Only from people I respect","Not really"]]],
-["INDEPENDENCE","You prefer to...",["Do things yourself","Coordinate with others","Delegate","Depends on the task"]]],
-["FUTURE","Thinking about the future makes you...",["Excited","Curious","Anxious","Focused on today"]]],
-["VALUES","When choosing between two good options you prioritize...",["Freedom","Security","Impact","Enjoyment"]]],
-["INSTINCT","Your first instinct is usually...",["Reliable","Needs checking","Strong but emotional","Different every time"]]],
-["FINAL","If the machine had one word for you, you'd want it to be...",["CAPABLE","ORIGINAL","UNSTOPPABLE","UNDERSTOOD"]]
+/* ============================================================
+   QUESTIONS
+   ============================================================ */
+
+const QUESTIONS = [
+  ["Two free hours on campus. Where do you go?",
+    ["Somewhere I have never been","A place with my people","A quiet place to think","Finish something"],
+    ["O","E","I","C"],"CAMPUS"],
+
+  ["SJT / Amazon feels:",
+    ["Crowded and energetic","Social and convenient","Chaotic but useful","I avoid crowds"],
+    ["E","E","O","I"],"SJT / AMAZON"],
+
+  ["A friend changes tonight's plan last minute.",
+    ["Excellent. Improvise.","Who is coming?","Why change it?","Give me details."],
+    ["N","E","C","C"],"SOCIAL"],
+
+  ["A difficult optional problem appears.",
+    ["I have to solve it.","Maybe with friends.","Later.","I get curious immediately."],
+    ["T","E","C","N"],"ACADEMIC"],
+
+  ["Which campus atmosphere attracts you?",
+    ["Busy and alive","Quiet and focused","Unpredictable","Organized"],
+    ["E","I","N","C"],"VIBE"],
+
+  ["Your group project is falling apart.",
+    ["Take command.","Calm everyone.","Fix my part quietly.","Try a different approach."],
+    ["E","F","C","N"],"GROUP"],
+
+  ["You discover an unknown campus place.",
+    ["Explore immediately.","Send it to friends.","Observe first.","Map it mentally."],
+    ["N","E","I","T"],"EXPLORATION"],
+
+  ["Unexpected ₹1,000.",
+    ["Save it.","Use it for an experience.","Buy something interesting.","Spend it with friends."],
+    ["C","N","N","E"],"CHOICE"],
+
+  ["Best compliment?",
+    ["You're brilliant.","You're dependable.","You're interesting.","People feel comfortable with you."],
+    ["T","C","N","F"],"SOCIAL"],
+
+  ["Exam is seven days away.",
+    ["Plan the week.","Wait for pressure.","Study with others.","Attack the hardest topic."],
+    ["C","C","E","N"],"ACADEMIC"],
+
+  ["Someone strongly disagrees with you.",
+    ["Debate.","Ask why.","Let it go.","Find evidence."],
+    ["T","F","F","T"],"SOCIAL"],
+
+  ["More attractive?",
+    ["Stable routine.","New challenge.","Crowded night.","Hard intellectual problem."],
+    ["C","N","E","T"],"VIBE"],
+
+  ["Nobody is watching. Default?",
+    ["My own system.","Explore interests.","Contact someone.","Relax."],
+    ["C","N","E","F"],"PRIVATE"],
+
+  ["Lead strangers.",
+    ["Organize.","Ask everyone.","Plan quietly.","Make it an adventure."],
+    ["C","F","T","E"],"GROUP"],
+
+  ["Which failure bothers you most?",
+    ["Wasted potential.","Letting someone down.","Unable to adapt.","Not understanding why."],
+    ["C","F","N","T"],"REFLECTION"],
+
+  ["Pick a night.",
+    ["Long conversation.","Solo project until 2 AM.","Spontaneous trip.","Early sleep + tomorrow plan."],
+    ["F","T","N","C"],"NIGHT"],
+
+  ["Closest statement?",
+    ["I need novelty.","I need structure.","I need people.","I need ideas."],
+    ["N","C","E","N"],"IDENTITY"],
+
+  ["One machine button.",
+    ["UNKNOWN","CLASSIFIED","ARCHIVE","OVERRIDE"],
+    ["N","C","I","E"],"MACHINE"],
+
+  ["A rule seems inefficient.",
+    ["Follow it.","Question it.","Find a workaround.","Ask why it exists."],
+    ["C","T","N","F"],"RULES"],
+
+  ["Someone new joins your group.",
+    ["Talk first.","Observe.","Ask about their interests.","Give them a task."],
+    ["E","I","F","C"],"SOCIAL"],
+
+  ["You get a free weekend.",
+    ["Plan it.","Travel somewhere random.","Stay home and think.","Call everyone."],
+    ["C","N","I","E"],"WEEKEND"],
+
+  ["A debate becomes emotional.",
+    ["Focus on facts.","Protect the relationship.","Leave it.","Find the underlying idea."],
+    ["T","F","I","N"],"CONFLICT"],
+
+  ["Your room is messy.",
+    ["Fix it now.","Ignore it.","Create a system.","It is creatively organized."],
+    ["C","N","C","O"],"ORDER"],
+
+  ["A professor gives an ambiguous task.",
+    ["Ask for criteria.","Experiment.","Research it.","Make my own interpretation."],
+    ["C","N","N","T"],"ACADEMIC"],
+
+  ["A friend needs advice.",
+    ["Give a logical plan.","Listen first.","Tell them what I'd do.","Ask what they really want."],
+    ["T","F","T","F"],"EMPATHY"],
+
+  ["A new club appears.",
+    ["Join immediately.","Investigate first.","Ask friends.","Probably not."],
+    ["N","T","E","I"],"CAMPUS"],
+
+  ["You have to choose quickly.",
+    ["Gut feeling.","List pros/cons.","Ask someone.","Take the unusual option."],
+    ["N","T","F","N"],"DECISION"],
+
+  ["What makes a place memorable?",
+    ["People.","Architecture.","Unexpected events.","Quiet atmosphere."],
+    ["E","N","N","I"],"PLACE"],
+
+  ["Your ideal teammate:",
+    ["Reliable.","Creative.","Social.","Analytical."],
+    ["C","N","E","T"],"TEAM"],
+
+  ["You notice a pattern nobody else noticed.",
+    ["Mention it.","Test it.","Keep observing.","Build a theory."],
+    ["E","T","I","N"],"PATTERNS"],
+
+  ["How do you react to routine?",
+    ["It helps.","It suffocates.","I modify it.","I forget it exists."],
+    ["C","N","N","I"],"ROUTINE"],
+
+  ["Your ideal campus day:",
+    ["Productive.","Exploratory.","Social.","Quiet and intellectual."],
+    ["C","N","E","I"],"CAMPUS"],
+
+  ["A strange idea appears.",
+    ["Reject it.","Explore it.","Explain it.","Tell someone."],
+    ["C","N","T","E"],"IDEAS"],
+
+  ["Someone challenges your identity.",
+    ["Defend it.","Question myself.","Laugh.","Ask what they mean."],
+    ["T","I","E","F"],"IDENTITY"],
+
+  ["Choose a fictional role.",
+    ["Commander.","Scholar.","Explorer.","Mediator."],
+    ["E","T","N","F"],"ROLE"],
+
+  ["The machine gives you an unexplained result.",
+    ["Trust the system.","Demand evidence.","Investigate.","Make a joke."],
+    ["C","T","N","E"],"MACHINE"]
 ];
 
-const archetypes = [
-["THE ARCHITECT","HB-A01","You naturally turn ambiguity into structure. You notice systems, patterns and leverage points.",["INTJ","ENTJ"],72],
-["THE OPERATOR","HB-O02","You prefer action, momentum and practical results. You learn by doing and adapting.",["ESTP","ENTJ"],69],
-["THE EXPLORER","HB-E03","Novelty pulls you forward. You collect experiences, ideas and possibilities.",["ENTP","ENFP"],68],
-["THE ANALYST","HB-N04","You investigate before committing and enjoy understanding how things actually work.",["INTP","ISTJ"],71],
-["THE CATALYST","HB-C05","You energize people and turn stalled situations into movement.",["ENFP","ENFJ"],67],
-["THE STRATEGIST","HB-S06","You think several moves ahead and enjoy competitive problems.",["INTJ","ENTJ"],74],
-["THE CONNECTOR","HB-K07","You build momentum through people, conversations and shared experiences.",["ENFJ","ESFJ"],66],
-["THE SOLOIST","HB-S08","You are comfortable following your own route and protecting your autonomy.",["ISTP","INTP"],70]
+
+/* ============================================================
+   36 FIXED ARCHETYPES
+   ============================================================ */
+
+const ARCHETYPES = [
+["DER ENTDECKER","VP-01 / EXPLORATOR","Novelty is your natural habitat.",
+[.94,.42,.72,.58,.82,.88,.74,.79,.68,.55,.91]],
+
+["DER STRATEGE","VP-02 / STRATEGUS","You turn uncertainty into structure.",
+[.78,.95,.43,.62,.35,.91,.48,.94,.31,.83,.71]],
+
+["DER GELEHRTE","VP-03 / SCHOLARIS","You would like to understand the mechanism.",
+[.97,.74,.38,.60,.39,.86,.56,.98,.42,.91,.96]],
+
+["DER DIPLOMAT","VP-04 / MEDIATOR","You notice the social temperature before the room does.",
+[.69,.58,.72,.96,.46,.52,.93,.62,.29,.35,.78]],
+
+["DER ORGANISATOR","VP-05 / ORDINATOR","Order appears to have become a personal hobby.",
+[.48,.98,.41,.69,.30,.86,.57,.67,.35,.74,.44]],
+
+["DER REBELL","VP-06 / CONTRARIUS","You regard obvious instructions as a starting point.",
+[.86,.47,.81,.52,.79,.94,.63,.69,.72,.71,.87]],
+
+["DER BEOBACHTER","VP-07 / OBSERVATOR","You collect patterns before making your move.",
+[.83,.66,.28,.70,.38,.92,.81,.91,.88,.77,.84]],
+
+["DER NACHTDENKER","VP-08 / NOCTURNUS","Normal operating hours are merely a suggestion.",
+[.91,.62,.45,.66,.71,.87,.58,.94,.79,.72,.91]],
+
+["DER VISIONÄR","VP-09 / FUTURUS","You see the next version before the current one is finished.",
+[.98,.55,.64,.59,.73,.91,.65,.96,.56,.69,.99]],
+
+["DER KONSTRUKTEUR","VP-10 / FABRICATOR","Ideas become more interesting when they can be built.",
+[.81,.88,.53,.57,.49,.90,.49,.88,.43,.81,.76]],
+
+["DER VERMITTLER","VP-11 / CONCORDIA","You naturally search for the bridge between people.",
+[.65,.57,.67,.98,.41,.54,.96,.58,.34,.31,.73]],
+
+["DER IMPROVISATOR","VP-12 / AD-LIBITUM","You perform suspiciously well without a plan.",
+[.79,.51,.86,.63,.77,.78,.71,.73,.41,.49,.88]],
+
+["DER ANALYST","VP-13 / ANALYTICUS","Your instinct is to decompose the problem.",
+[.86,.91,.37,.51,.34,.90,.44,.99,.54,.88,.82]],
+
+["DER ABENTEURER","VP-14 / ADVENTURUS","A predictable weekend sounds like an administrative error.",
+[.81,.39,.91,.54,.91,.89,.66,.68,.36,.43,.89]],
+
+["DER IDEALIST","VP-15 / IDEALIS","You measure decisions against an internal standard.",
+[.89,.63,.51,.88,.55,.80,.87,.78,.61,.25,.94]],
+
+["DER SKEPTIKER","VP-16 / CRITICUS","Your default response to certainty is: prove it.",
+[.83,.78,.36,.44,.31,.88,.42,.95,.76,.86,.78]],
+
+["DER KOMMUNIKATOR","VP-17 / ORATOR","Conversation is both tool and playground.",
+[.66,.54,.93,.76,.58,.62,.92,.65,.21,.29,.71]],
+
+["DER PERFEKTIONIST","VP-18 / PERFECTUS","You noticed the flaw nobody asked about.",
+[.72,.99,.39,.55,.37,.84,.54,.83,.68,.79,.64]],
+
+["DER NOMADE","VP-19 / VAGABUND","You become restless when the map stops changing.",
+[.88,.34,.82,.55,.84,.95,.59,.71,.70,.48,.93]],
+
+["DER PRAGMATIKER","VP-20 / PRACTICUS","Useful beats impressive.",
+[.52,.88,.61,.57,.43,.83,.52,.72,.39,.72,.55]],
+
+["DER TRÄUMER","VP-21 / SOMNIATOR","Reality is acceptable; imagination is better.",
+[.96,.43,.48,.74,.67,.83,.79,.89,.82,.19,.97]],
+
+["DER UNTERNEHMER","VP-22 / INITIATOR","You see opportunities where other people see paperwork.",
+[.78,.79,.84,.57,.68,.93,.67,.81,.28,.63,.83]],
+
+["DER MENTOR","VP-23 / MAGISTER","You instinctively turn experience into guidance.",
+[.67,.72,.54,.93,.38,.65,.98,.73,.74,.30,.79]],
+
+["DER TAKTIKER","VP-24 / TACTICUS","You think three moves ahead, preferably quietly.",
+[.74,.89,.46,.49,.34,.94,.51,.92,.72,.82,.69]],
+
+["DER PHILOSOPH","VP-25 / PHILOSOPHUS","You have questions about the question.",
+[.99,.52,.31,.66,.44,.92,.63,.99,.95,.88,.98]],
+
+["DER EXPERIMENTATOR","VP-26 / EXPERIMENTUM","You learn by trying the thing.",
+[.93,.61,.73,.55,.81,.87,.62,.86,.51,.56,.94]],
+
+["DER EINZELGÄNGER","VP-27 / SOLITARIUS","You are perfectly capable of enjoying your own company.",
+[.79,.64,.22,.49,.35,.97,.62,.87,.97,.73,.83]],
+
+["DER NETZWERKER","VP-28 / CONNECTOR","You treat the campus like a graph of people.",
+[.61,.53,.97,.78,.55,.64,.99,.67,.12,.24,.69]],
+
+["DER TRADITIONALIST","VP-29 / TRADITIO","A proven system deserves a fair hearing.",
+[.42,.91,.47,.72,.22,.68,.59,.61,.38,.72,.35]],
+
+["DER OPTIMIST","VP-30 / OPTIMUS","Your default forecast is suspiciously positive.",
+[.69,.58,.78,.87,.63,.71,.89,.61,.23,.22,.76]],
+
+["DER KRITIKER","VP-31 / CENSOR","You see the weak assumption in the room.",
+[.81,.82,.34,.39,.28,.86,.45,.96,.83,.91,.73]],
+
+["DER KURATOR","VP-32 / CURATOR","You collect good things and arrange them into meaning.",
+[.88,.71,.46,.73,.46,.82,.76,.88,.79,.48,.86]],
+
+["DER PROVOKATEUR","VP-33 / PROVOCATOR","You occasionally improve a discussion by making it worse first.",
+[.82,.45,.88,.43,.73,.95,.57,.79,.46,.76,.91]],
+
+["DER ARCHITEKT","VP-34 / ARCHITECTUS","You prefer systems that survive their creator.",
+[.84,.94,.44,.51,.31,.96,.47,.94,.57,.86,.77]],
+
+["DER CHAOSMEISTER","VP-35 / CHAOTICUS","Somehow the disorder keeps producing results.",
+[.75,.29,.87,.61,.88,.82,.70,.76,.40,.38,.90]],
+
+["DER NAVIGATOR","VP-36 / NAVIGATOR","You adapt the route without losing the destination.",
+[.77,.78,.71,.69,.66,.90,.73,.82,.45,.59,.84]]
 ];
 
-let user = null;
-let current = 0;
-let answers = [];
-let result = null;
-let factIndex = 0;
 
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  $(id)?.classList.add("active");
-  window.scrollTo({top:0, behavior:"smooth"});
+/* ============================================================
+   MACHINE DATA
+   ============================================================ */
+
+const KEY_VECTOR = {
+  O:[1,0,0,0,0,.35,.15,.70,0,0,1],
+  C:[0,1,0,0,0,.25,0,.45,0,0,0],
+  E:[0,0,1,.20,0,0,.75,.10,-1,0,.10],
+  A:[0,0,0,1,-.10,0,.90,0,0,-.45,.15],
+  N:[.35,0,.10,-.10,1,.15,.15,.30,0,.05,.55],
+  I:[0,0,-1,0,0,.55,.35,.45,1,0,.20],
+  T:[0,0,0,-.35,0,.25,-.20,.90,0,1,.30],
+  F:[0,0,0,.45,0,-.05,.75,.05,0,-1,.20],
+  S:[-.25,.15,0,0,-.10,0,.15,.20,0,0,-1]
+};
+
+const DIM_VARIANCE =
+  [.22,.19,.23,.20,.21,.24,.20,.18,.23,.22,.20];
+
+const RESPONSE_STRENGTH = .075;
+
+
+/* ============================================================
+   FACTS
+   ============================================================ */
+
+const FACTS = [
+  ["MACHINE OBSERVATION",
+   "Your answer pattern contains a high curiosity signal. The machine has filed this under: potentially troublesome."],
+
+  ["ARCHIVAL NOTE",
+   "You selected an answer associated with novelty. Bureaucracy has been notified."],
+
+  ["CAMPUS INTELLIGENCE",
+   "SJT / Amazon was treated as a campus-vibe variable, not as universal psychological truth."],
+
+  ["MATHEMATICAL FOOTNOTE",
+   "The classifier compares you against every fixed archetype rather than stopping at the first plausible match."],
+
+  ["TURING FILE",
+   "The interface uses tape, symbols and state-machine ideas as a visual metaphor. The personality model itself is statistical."],
+
+  ["JUNG FILE",
+   "The Jung-inspired layer represents continuous tendencies rather than putting a person into one permanent box."],
+
+  ["STATISTICAL NOTICE",
+   "A match percentage is a model similarity score, not a probability that the archetype is objectively who you are."],
+
+  ["CLASSIFIED",
+   "The machine refuses to explain why it finds your browser-tab count psychologically significant."],
+
+  ["AKTENNOTIZ",
+   "You have successfully participated in an unnecessarily dramatic questionnaire."],
+
+  ["CAMPUS REPORT",
+   "Your classification is fictional. Your procrastination, if any, remains outside the jurisdiction of this machine."],
+
+  ["RANDOM MEMORANDUM",
+   "Somewhere, a spreadsheet is proud of you."],
+
+  ["ARCHIVE",
+   "The result was generated locally in your browser."],
+
+  ["NOTICE",
+   "The 36 characters are fixed. Your answers determine which one fits best."],
+
+  ["ERROR 404",
+   "Your childhood password was not requested. Please enjoy this rare victory."],
+
+  ["OFFICIAL-SOUNDING FACT",
+   "The more seriously the interface looks, the more suspicious you should be of the joke."],
+
+  ["FIELD NOTE",
+   "If three friends get three different archetypes, congratulations: the system has created an argument."],
+
+  ["NIGHT SHIFT",
+   "The machine has no opinion on whether 2:00 AM is an acceptable time to start studying."],
+
+  ["FINAL NOTICE",
+   "Your classification may be wrong. This is intentional humility, not a software bug."]
+];
+
+
+/* ============================================================
+   STATE
+   ============================================================ */
+
+const state = {
+  name: "",
+  i: 0,
+  profile: new Array(11).fill(.5),
+  answers: [],
+  answerTimes: [],
+  best: null,
+  ranking: [],
+  match: 0,
+  confidence: 0,
+  factIndex: 0,
+  startedAt: null
+};
+
+
+/* ============================================================
+   SHORT DOM HELPER
+   ============================================================ */
+
+function $(id) {
+  return document.getElementById(id);
 }
 
-function authMessage(text, error=false) {
-  const el = $("authStatus");
-  if (el) { el.textContent = text; el.classList.toggle("error", error); }
-}
 
-function setLoggedIn(u) {
-  user = u;
-  $("login-screen").style.display = "none";
-  $("application").style.display = "block";
-  $("authPanel").textContent = `AUTHENTICATED // ${u.displayName || u.email || u.uid}`;
-}
+/* ============================================================
+   SCREEN SWITCHING
+   ============================================================ */
 
-async function login() {
-  const button = $("googleLogin");
-  button.disabled = true;
-  button.textContent = "CONNECTING TO GOOGLE...";
-  authMessage("OPENING GOOGLE AUTHENTICATION...");
+function show(id) {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
 
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    setLoggedIn(result.user);
-    authMessage("AUTHENTICATION SUCCESSFUL");
-  } catch (e) {
-    console.error(e);
-    if (e.code === "auth/popup-blocked" || e.code === "auth/cancelled-popup-request") {
-      authMessage("POPUP BLOCKED — SWITCHING TO REDIRECT...");
-      try {
-        await signInWithRedirect(auth, googleProvider);
-        return;
-      } catch (redirectError) {
-        console.error(redirectError);
-        authMessage("GOOGLE SIGN-IN FAILED: " + redirectError.code, true);
-      }
-    } else if (e.code === "auth/popup-closed-by-user") {
-      authMessage("SIGN-IN CANCELLED.");
-    } else if (e.code === "auth/unauthorized-domain") {
-      authMessage("FIREBASE ERROR: ADD THIS GITHUB PAGES DOMAIN TO AUTHORIZED DOMAINS.", true);
-    } else {
-      authMessage(`GOOGLE SIGN-IN FAILED: ${e.code || e.message}`, true);
-    }
-  } finally {
-    button.disabled = false;
-    button.textContent = "CONTINUE WITH GOOGLE";
+  const target = $(id);
+
+  if (target) {
+    target.classList.add("active");
+    window.scrollTo(0,0);
   }
 }
+
+
+/* ============================================================
+   START
+   ============================================================ */
+
+function beginMachine() {
+
+  const nameInput = $("userName");
+
+  state.name =
+    nameInput && nameInput.value.trim()
+      ? nameInput.value.trim()
+      : "UNKNOWN SUBJECT";
+
+  state.i = 0;
+  state.answers = [];
+  state.answerTimes = [];
+  state.profile = new Array(11).fill(.5);
+  state.startedAt = Date.now();
+
+  localStorage.removeItem("vp_progress");
+
+  if ($("resultName")) {
+    $("resultName").textContent = state.name;
+  }
+
+  if ($("streak")) {
+    $("streak").textContent = "CHAIN 0";
+  }
+
+  show("quiz");
+
+  renderQuestion();
+}
+
+
+/* ============================================================
+   QUESTION RENDERER
+   ============================================================ */
 
 function renderQuestion() {
-  const q = questions[current];
-  $("progress").textContent = `INPUT ${String(current+1).padStart(2,"0")} / ${questions.length}`;
-  $("state").textContent = `STATE q${current}`;
-  $("tape").style.width = `${(current/questions.length)*100}%`;
-  $("domain").textContent = q[0];
-  $("question").textContent = q[1];
-  $("streak").textContent = `CHAIN ${current}`;
+
+  if (state.i >= QUESTIONS.length) {
+    classify();
+    return;
+  }
+
+  const q = QUESTIONS[state.i];
+
+  if ($("progress")) {
+    $("progress").textContent =
+      `INPUT ${String(state.i + 1).padStart(2,"0")} / ${QUESTIONS.length}`;
+  }
+
+  if ($("progressText")) {
+    $("progressText").textContent =
+      `QUESTION ${state.i + 1} OF ${QUESTIONS.length}`;
+  }
+
+  if ($("progressPct")) {
+    $("progressPct").textContent =
+      `${Math.round(state.i / QUESTIONS.length * 100)}%`;
+  }
+
+  if ($("state")) {
+    $("state").textContent = `STATE q${state.i}`;
+  }
+
+  if ($("domain")) {
+    $("domain").textContent =
+      `${q[3]} // INPUT SYMBOL`;
+  }
+
+  if ($("question")) {
+    $("question").textContent = q[0];
+  }
+
+  if ($("machineNote")) {
+    $("machineNote").textContent =
+      "THE MACHINE RECORDS A SYMBOL. IT DOES NOT RECORD YOUR NAME.";
+  }
+
+  if ($("tape")) {
+    $("tape").style.width =
+      `${((state.i + 1) / QUESTIONS.length) * 100}%`;
+  }
+
   const options = $("options");
+
+  if (!options) return;
+
   options.innerHTML = "";
-  q[2].forEach((text, index) => {
-    const b = document.createElement("button");
-    b.className = "option";
-    b.type = "button";
-    b.textContent = `${String.fromCharCode(65+index)} // ${text}`;
-    b.addEventListener("click", () => answer(index));
-    options.appendChild(b);
+
+  q[1].forEach((text,index) => {
+
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "option";
+
+    button.textContent =
+      `${String.fromCharCode(65 + index)}  ${text}`;
+
+    button.addEventListener("click", () => {
+      answer(index,q[2][index]);
+    });
+
+    options.appendChild(button);
   });
-  $("machineNote").textContent = current === 0 ? "MACHINE READY // FIRST INPUT" : "INPUT ACCEPTED // NEXT VARIABLE LOADED";
 }
 
-function answer(index) {
-  answers[current] = index;
-  current++;
-  if (current >= questions.length) finishQuiz();
-  else renderQuestion();
-}
 
-function scoreResult() {
-  const counts = [0,0,0,0];
-  answers.forEach(a => counts[a]++);
-  const normalized = counts.map(v => Math.round(v / questions.length * 100));
-  const idx = (answers.reduce((a,b)=>a+b,0) + answers.filter((x,i)=>x===i%4).length) % archetypes.length;
-  const ranked = archetypes.map((a,i) => ({
-    a, score: Math.max(58, Math.min(96, a[4] + ((idx*7+i*3+counts[i%4])%13)-6))
-  })).sort((x,y)=>y.score-x.score);
-  return { primary: ranked[0], ranked, axes: normalized, counts };
-}
+/* ============================================================
+   RECORD ANSWER
+   ============================================================ */
 
-function statHTML(label, value) {
-  return `<div class="stat"><div class="stat-label"><span>${label}</span><span>${value}%</span></div><div class="stat-bar"><i style="width:${value}%"></i></div></div>`;
-}
+function answer(optionIndex,key) {
 
-function finishQuiz() {
-  result = scoreResult();
-  $("resultName").textContent = $("userName").value.trim() || user?.displayName || "ANONYMOUS SUBJECT";
-  $("archetype").textContent = result.primary.a[0];
-  $("archetypeCode").textContent = result.primary.a[1];
-  $("matchScore").textContent = result.primary.score;
-  $("description").textContent = result.primary.a[2];
+  const now = Date.now();
 
-  $("jungStats").innerHTML =
-    statHTML("EXTRAVERSION", result.axes[0]) +
-    statHTML("INTUITION", result.axes[1]) +
-    statHTML("THINKING", result.axes[2]) +
-    statHTML("JUDGING", result.axes[3]);
+  state.answerTimes.push(now);
+  state.answers.push(optionIndex);
 
-  $("bigFive").innerHTML =
-    statHTML("OPENNESS", Math.min(99, result.axes[1]+8)) +
-    statHTML("CONSCIENTIOUSNESS", Math.min(99, result.axes[3]+5)) +
-    statHTML("EXTRAVERSION", result.axes[0]) +
-    statHTML("AGREEABLENESS", 55 + (result.axes[2] % 35)) +
-    statHTML("ENERGY", 50 + (result.axes[0] % 45));
+  const vector = vecForResponse(key,optionIndex);
 
-  $("ranking").innerHTML = result.ranked.slice(0,5).map((r,i)=>
-    `<div class="rank"><span>#${i+1}</span><b>${r.a[0]}</b><span>${r.score}%</span></div>`
-  ).join("");
+  state.profile = state.profile.map((value,index) => {
 
-  $("campusStats").innerHTML =
-    statHTML("EXPLORATION", 45 + result.axes[1]/2) +
-    statHTML("SOCIAL SIGNAL", 40 + result.axes[0]/2) +
-    statHTML("COMPETITIVE DRIVE", 45 + result.axes[2]/2);
+    const evidence =
+      vector[index] * RESPONSE_STRENGTH;
 
-  factIndex = 0;
-  renderFact();
-  showScreen("result");
-  saveParticipant(false);
-}
+    return Math.max(
+      .03,
+      Math.min(.97,value + evidence)
+    );
+  });
 
-const facts = [
-  "The machine cannot actually read your mind. It only sees the choices you made.",
-  "Your classification is fictional and designed for campus entertainment.",
-  "Changing one answer can change the machine's ranking.",
-  "The strongest signal is not necessarily the most important part of your personality.",
-  "The dossier is a snapshot of this run, not a permanent label."
-];
+  state.i++;
 
-function renderFact() {
-  $("fact").textContent = facts[factIndex % facts.length];
-}
+  localStorage.setItem(
+    "vp_progress",
+    JSON.stringify({
+      i: state.i,
+      answers: state.answers,
+      name: state.name
+    })
+  );
 
-async function saveParticipant(consent=true) {
-  if (!user || !result) return;
-  try {
-    await setDoc(doc(db, "participants", user.uid), {
-      uid: user.uid,
-      displayName: $("resultName").textContent,
-      email: user.email || null,
-      archetype: result.primary.a[0],
-      archetypeCode: result.primary.a[1],
-      matchScore: result.primary.score,
-      answers: answers,
-      consent,
-      updatedAt: serverTimestamp()
-    }, {merge:true});
-  } catch (e) {
-    console.warn("Firestore save failed:", e);
+  if ($("streak")) {
+    $("streak").textContent =
+      `CHAIN ${state.i}`;
   }
-}
 
-function shareResult() {
-  if (!result) return;
-  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-    n: $("resultName").textContent,
-    a: result.primary.a[0],
-    c: result.primary.a[1],
-    s: result.primary.score
-  }))));
-  const url = `${location.origin}${location.pathname}#result=${payload}`;
-  $("shareBox").style.display = "flex";
-  $("shareLink").value = url;
-  $("shareStatus").textContent = "RESULT LINK GENERATED.";
-}
-
-async function copyLink() {
-  try {
-    await navigator.clipboard.writeText($("shareLink").value);
-    $("shareStatus").textContent = "COPIED.";
-  } catch {
-    $("shareLink").select();
-    document.execCommand("copy");
-    $("shareStatus").textContent = "COPIED.";
-  }
-}
-
-function saveCard() {
-  const text = [
-    "HELDENMUNT BOYS // THE MACHINE",
-    "",
-    `SUBJECT: ${$("resultName").textContent}`,
-    `CLASSIFICATION: ${result.primary.a[0]}`,
-    `CODE: ${result.primary.a[1]}`,
-    `MATCH: ${result.primary.score}%`,
-    "",
-    result.primary.a[2]
-  ].join("\n");
-  const blob = new Blob([text], {type:"text/plain"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "heldenmunt-result.txt";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function enableLocation() {
-  if (!navigator.geolocation) {
-    $("locationStatus").textContent = "GEOLOCATION NOT SUPPORTED.";
-    return;
-  }
-  $("locationStatus").textContent = "REQUESTING LOCATION...";
-  navigator.geolocation.getCurrentPosition(async pos => {
-    $("locationStatus").textContent = `LOCATION SHARED // ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-    if (user) {
-      try {
-        await setDoc(doc(db, "participants", user.uid, "location", "current"), {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          updatedAt: serverTimestamp()
-        });
-      } catch(e) { console.warn(e); }
-    }
-  }, err => {
-    $("locationStatus").textContent = `LOCATION FAILED // ${err.message}`;
-  }, {enableHighAccuracy:true, timeout:10000});
-}
-
-function disableLocation() {
-  $("locationStatus").textContent = "LOCATION SHARING OFF";
-}
-
-$("googleLogin").addEventListener("click", login);
-$("logout").addEventListener("click", () => signOut(auth));
-$("begin").addEventListener("click", () => {
-  const name = $("userName").value.trim();
-  if (!name) { $("userName").focus(); return; }
-  current = 0; answers = [];
-  showScreen("quiz");
-  renderQuestion();
-});
-$("again").addEventListener("click", () => {
-  current=0; answers=[]; showScreen("quiz"); renderQuestion();
-});
-$("nextFact").addEventListener("click", () => { factIndex++; renderFact(); });
-$("share").addEventListener("click", shareResult);
-$("copyLink").addEventListener("click", copyLink);
-$("saveImage").addEventListener("click", saveCard);
-$("enableLocation").addEventListener("click", enableLocation);
-$("disableLocation").addEventListener("click", disableLocation);
-$("sendData").addEventListener("click", async () => {
-  if (!$("optin").checked) {
-    $("sendStatus").textContent = "CHECK THE OPT-IN BOX FIRST.";
-    return;
-  }
-  await saveParticipant(true);
-  $("sendStatus").textContent = "ANONYMOUS RESULT SUBMITTED.";
-});
-
-onAuthStateChanged(auth, u => {
-  if (u) {
-    setLoggedIn(u);
-    if (!$("userName").value) $("userName").value = u.displayName || "";
+  if (state.i < QUESTIONS.length) {
+    renderQuestion();
   } else {
-    $("login-screen").style.display = "flex";
-    $("application").style.display = "none";
+    classify();
   }
-});
+}
 
-getRedirectResult(auth).then(r => {
-  if (r?.user) setLoggedIn(r.user);
-}).catch(e => {
-  console.error("Redirect auth result:", e);
-  if (e.code === "auth/unauthorized-domain") authMessage("UNAUTHORIZED DOMAIN — FIX FIREBASE AUTHORIZED DOMAINS.", true);
-});
+
+/* ============================================================
+   RESPONSE VECTOR
+   ============================================================ */
+
+function vecForResponse(key,position) {
+
+  const base =
+    KEY_VECTOR[key] || KEY_VECTOR.O;
+
+  const multiplier =
+    [1,.96,1.04,.98][position] || 1;
+
+  return base.map(value => value * multiplier);
+}
+
+
+/* ============================================================
+   NORMALIZE PROFILE
+   ============================================================ */
+
+function normalizeProfile() {
+
+  return state.profile.map(value => {
+
+    const x = (value - .5) * 2;
+
+    const logistic =
+      1 / (1 + Math.exp(-1.55 * x));
+
+    return Math.max(
+      .03,
+      Math.min(.97,logistic)
+    );
+  });
+}
+
+
+/* ============================================================
+   DISTANCE
+   ============================================================ */
+
+function mahalanobis(a,b) {
+
+  let total = 0;
+
+  for (let i=0;i<a.length;i++) {
+
+    const z =
+      (a[i] - b[i]) /
+      DIM_VARIANCE[i];
+
+    total += z * z;
+  }
+
+  return Math.sqrt(total / a.length);
+}
+
+
+/* ============================================================
+   COSINE
+   ============================================================ */
+
+function cosine(a,b) {
+
+  let dot = 0;
+  let aa = 0;
+  let bb = 0;
+
+  for (let i=0;i<a.length;i++) {
+
+    const x = a[i] - .5;
+    const y = b[i] - .5;
+
+    dot += x * y;
+    aa += x * x;
+    bb += y * y;
+  }
+
+  if (!aa || !bb) return 0;
+
+  return dot /
+    (Math.sqrt(aa) * Math.sqrt(bb));
+}
+
+
+/* ============================================================
+   PEARSON
+   ============================================================ */
+
+function pearson(a,b) {
+
+  const am =
+    a.reduce((s,v)=>s+v,0) / a.length;
+
+  const bm =
+    b.reduce((s,v)=>s+v,0) / b.length;
+
+  let numerator = 0;
+  let da = 0;
+  let db = 0;
+
+  for (let i=0;i<a.length;i++) {
+
+    const x = a[i] - am;
+    const y = b[i] - bm;
+
+    numerator += x*y;
+    da += x*x;
+    db += y*y;
+  }
+
+  if (!da || !db) return 0;
+
+  return numerator /
+    Math.sqrt(da * db);
+}
+
+
+/* ============================================================
+   COMPATIBILITY
+   ============================================================ */
+
+function rawCompatibility(a,b) {
+
+  const distance =
+    mahalanobis(a,b);
+
+  const cosineScore =
+    (cosine(a,b) + 1) / 2;
+
+  const pearsonScore =
+    (pearson(a,b) + 1) / 2;
+
+  return (
+    .56 * Math.exp(-distance / 2.25) +
+    .27 * cosineScore +
+    .17 * pearsonScore
+  );
+}
+
+
+/* ============================================================
+   SOFTMAX
+   ============================================================ */
+
+function softmax(scores,temperature=.075) {
+
+  const maximum =
+    Math.max(...scores);
+
+  const exponentials =
+    scores.map(score =>
+      Math.exp(
+        (score - maximum) /
+        temperature
+      )
+    );
+
+  const total =
+    exponentials.reduce(
+      (a,b)=>a+b,
+      0
+    );
+
+  return exponentials.map(
+    value => value / total
+  );
+}
+
+
+/* ============================================================
+   CLASSIFY
+   ============================================================ */
+
+function classify() {
+
+  state.profile =
+    normalizeProfile();
+
+  const scored =
+    ARCHETYPES
+      .map((archetype,index) => ({
+        index,
+        a: archetype,
+        raw: rawCompatibility(
+          state.profile,
+          archetype[3]
+        )
+      }))
+      .sort(
+        (a,b) => b.raw - a.raw
+      );
+
+  const probabilities =
+    softmax(
+      scored.map(x => x.raw)
+    );
+
+  scored.forEach(
+    (item,index) => {
+      item.p = probabilities[index];
+    }
+  );
+
+  state.ranking = scored;
+  state.best = scored[0];
+
+  const mean =
+    scored.reduce(
+      (sum,item)=>sum + item.raw,
+      0
+    ) / scored.length;
+
+  const spread =
+    Math.sqrt(
+      scored.reduce(
+        (sum,item)=>
+          sum + Math.pow(item.raw - mean,2),
+        0
+      ) / scored.length
+    ) || .001;
+
+  const relative =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        .5 +
+        .20 *
+        (state.best.raw - mean) /
+        spread
+      )
+    );
+
+  state.match = relative;
+
+  const margin =
+    scored[0].p - scored[1].p;
+
+  state.confidence =
+    Math.min(
+      1,
+      .45 + margin * 2.2
+    );
+
+  renderResult();
+
+  saveLocalResult();
+
+  submitResearchData();
+
+  show("result");
+}
+
+
+/* ============================================================
+   RESULT
+   ============================================================ */
+
+function renderResult() {
+
+  const archetype =
+    state.best.a;
+
+  if ($("resultName")) {
+    $("resultName").textContent =
+      state.name;
+  }
+
+  if ($("archetype")) {
+    $("archetype").textContent =
+      archetype[0];
+  }
+
+  if ($("archetypeCode")) {
+    $("archetypeCode").textContent =
+      archetype[1];
+  }
+
+  if ($("description")) {
+    $("description").textContent =
+      archetype[2];
+  }
+
+  if ($("matchScore")) {
+    $("matchScore").textContent =
+      (state.match * 100).toFixed(1);
+  }
+
+  renderBars(
+    "jungStats",
+    [
+      ["INTROVERSION",1-state.profile[2]],
+      ["EXTRAVERSION",state.profile[2]],
+      ["THINKING",state.profile[9]],
+      ["FEELING",1-state.profile[9]],
+      ["SENSATION",1-state.profile[10]],
+      ["INTUITION",state.profile[10]]
+    ]
+  );
+
+  renderBars(
+    "bigFive",
+    [
+      ["OPENNESS",state.profile[0]],
+      ["CONSCIENTIOUSNESS",state.profile[1]],
+      ["EXTRAVERSION",state.profile[2]],
+      ["AGREEABLENESS",state.profile[3]],
+      ["NEUROTICISM",state.profile[4]]
+    ]
+  );
+
+  renderRanking();
+
+  renderCampus();
+
+  showFact();
+}
+
+
+/* ============================================================
+   BARS
+   ============================================================ */
+
+function renderBars(id,data) {
+
+  const container = $(id);
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  data.forEach(([label,value]) => {
+
+    const row =
+      document.createElement("div");
+
+    row.className = "stat";
+
+    const title =
+      document.createElement("div");
+
+    title.className = "stat-label";
+
+    title.innerHTML =
+      `<span>${label}</span>
+       <span>${Math.round(value * 100)}%</span>`;
+
+    const bar =
+      document.createElement("div");
+
+    bar.className = "stat-bar";
+
+    const fill =
+      document.createElement("i");
+
+    fill.style.width =
+      `${Math.round(value * 100)}%`;
+
+    bar.appendChild(fill);
+
+    row.appendChild(title);
+    row.appendChild(bar);
+
+    container.appendChild(row);
+  });
+}
+
+
+/* ============================================================
+   RANKING
+   ============================================================ */
+
+function renderRanking() {
+
+  const container =
+    $("ranking");
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  state.ranking
+    .slice(0,7)
+    .forEach((item,index) => {
+
+      const row =
+        document.createElement("div");
+
+      row.className = "rank";
+
+      const number =
+        document.createElement("span");
+
+      number.textContent =
+        String(index + 1)
+          .padStart(2,"0");
+
+      const name =
+        document.createElement("b");
+
+      name.textContent =
+        item.a[0];
+
+      const percentage =
+        document.createElement("span");
+
+      percentage.textContent =
+        `${(item.p * 100).toFixed(1)}%`;
+
+      row.appendChild(number);
+      row.appendChild(name);
+      row.appendChild(percentage);
+
+      container.appendChild(row);
+    });
+}
+
+
+/* ============================================================
+   CAMPUS SIGNALS
+   ============================================================ */
+
+function renderCampus() {
+
+  const container =
+    $("campusStats");
+
+  if (!container) return;
+
+  const categories = {
+    CAMPUS: 0,
+    SOCIAL: 0,
+    ACADEMIC: 0,
+    EXPLORATION: 0,
+    GROUP: 0
+  };
+
+  QUESTIONS.forEach((question,index) => {
+
+    const domain = question[3];
+
+    if (domain in categories) {
+
+      categories[domain] +=
+        state.answers[index] + 1;
+    }
+  });
+
+  const values =
+    Object.entries(categories);
+
+  const max =
+    Math.max(
+      ...values.map(x=>x[1]),
+      1
+    );
+
+  renderBars(
+    "campusStats",
+    values.map(
+      ([name,value]) =>
+        [name,value/max]
+    )
+  );
+}
+
+
+/* ============================================================
+   FACTS
+   ============================================================ */
+
+function showFact() {
+
+  const fact =
+    FACTS[state.factIndex % FACTS.length];
+
+  if ($("factLabel")) {
+    $("factLabel").textContent =
+      fact[0];
+  }
+
+  if ($("fact")) {
+    $("fact").textContent =
+      fact[1];
+  }
+}
+
+
+/* ============================================================
+  
