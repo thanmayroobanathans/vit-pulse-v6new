@@ -4,18 +4,15 @@ import { initializeApp } from
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
-  getFirestore,
-  doc,
-  setDoc,
-  serverTimestamp
+  getFirestore
 } from
   "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -23,79 +20,135 @@ import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 
-const auth = getAuth(app);
-const db = getFirestore(app);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
 
-window.VP_USER = null;
+googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
 
-window.VP_FIREBASE = {
-  auth,
-  db,
-  provider,
-  doc,
-  setDoc,
-  serverTimestamp
-};
 
-const loginButton = document.getElementById("googleLogin");
-const authStatus = document.getElementById("authStatus");
+// --------------------------------------------------
+// MANDATORY GOOGLE LOGIN
+// --------------------------------------------------
 
-function showUser(user) {
-  window.VP_USER = user;
+export async function loginWithGoogle() {
+  try {
+    await signInWithRedirect(
+      auth,
+      googleProvider
+    );
+  } catch (error) {
+    console.error("Google login failed:", error);
 
-  if (user) {
-    authStatus.textContent =
-      `SIGNED IN AS ${user.displayName || user.email}`;
-
-    loginButton.textContent = "GOOGLE ACCOUNT CONNECTED";
-    loginButton.disabled = true;
-  } else {
-    authStatus.textContent = "Guest mode available.";
+    alert(
+      "Google sign-in could not be started. Please try again."
+    );
   }
 }
 
-onAuthStateChanged(auth, showUser);
 
-loginButton.addEventListener("click", async () => {
-  loginButton.disabled = true;
-  authStatus.textContent = "CONNECTING TO GOOGLE...";
+// Complete redirect login
+getRedirectResult(auth)
+  .then((result) => {
 
-  try {
-    const result = await signInWithPopup(auth, provider);
+    if (result?.user) {
+      console.log(
+        "Authenticated:",
+        result.user.displayName
+      );
+    }
 
-    showUser(result.user);
+  })
+  .catch((error) => {
 
-  } catch (error) {
+    console.error(
+      "Google authentication error:",
+      error
+    );
 
-    console.error("Google sign-in error:", error);
+    alert(
+      "Google authentication failed. Please try again."
+    );
+  });
 
-    // If the browser blocks the popup, use redirect.
-    if (
-      error.code === "auth/popup-blocked" ||
-      error.code === "auth/popup-canceled"
-    ) {
-      await signInWithRedirect(auth, provider);
+
+// --------------------------------------------------
+// AUTH GUARD
+// --------------------------------------------------
+
+export function requireGoogleLogin(callback) {
+
+  onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+      showLoginScreen();
+
       return;
     }
 
-    loginButton.disabled = false;
+    hideLoginScreen();
 
-    authStatus.textContent =
-      `LOGIN FAILED: ${error.code || error.message}`;
-  }
-});
-
-getRedirectResult(auth)
-  .then(result => {
-    if (result && result.user) {
-      showUser(result.user);
-    }
-  })
-  .catch(error => {
-    console.error("Redirect login error:", error);
-    authStatus.textContent =
-      `LOGIN FAILED: ${error.code || error.message}`;
-    loginButton.disabled = false;
+    callback(user);
   });
+}
+
+
+// --------------------------------------------------
+// LOGIN SCREEN
+// --------------------------------------------------
+
+function showLoginScreen() {
+
+  document.body.classList.add(
+    "authentication-required"
+  );
+
+  const loginScreen =
+    document.getElementById("login-screen");
+
+  if (loginScreen) {
+    loginScreen.style.display = "flex";
+  }
+
+  const application =
+    document.getElementById("application");
+
+  if (application) {
+    application.style.display = "none";
+  }
+}
+
+
+function hideLoginScreen() {
+
+  document.body.classList.remove(
+    "authentication-required"
+  );
+
+  const loginScreen =
+    document.getElementById("login-screen");
+
+  if (loginScreen) {
+    loginScreen.style.display = "none";
+  }
+
+  const application =
+    document.getElementById("application");
+
+  if (application) {
+    application.style.display = "block";
+  }
+}
+
+
+export async function logout() {
+
+  await signOut(auth);
+
+  // Immediately return to authentication wall.
+  showLoginScreen();
+}
