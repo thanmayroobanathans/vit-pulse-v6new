@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -31,8 +32,9 @@ function showApplication(user) {
   const name = document.getElementById("userName");
   if (name && !name.value && user.displayName) name.value = user.displayName;
 
-  const status = document.getElementById("authStatus");
-  if (status) status.textContent = `AUTHENTICATED // ${user.email || ""}`;
+  // FIX: Update the visible auth panel inside the active application view
+  const authPanel = document.getElementById("authPanel");
+  if (authPanel) authPanel.textContent = `AUTHENTICATED // ${user.email || ""}`;
 
   window.dispatchEvent(new CustomEvent("vitpulse:authenticated", { detail: { user } }));
 }
@@ -58,11 +60,7 @@ async function loginWithGoogle() {
   if (status) status.textContent = "OPENING GOOGLE SIGN-IN...";
 
   try {
-    const result = await signInWithPopup(auth, provider);
-if (result?.user) {
-  await saveProfile(result.user);
-  showApplication(result.user);
-}
+    await signInWithRedirect(auth, provider);
   } catch (error) {
     console.error("GOOGLE LOGIN ERROR", error);
     if (status) status.textContent = `${error.code || "ERROR"}: ${error.message || ""}`;
@@ -73,14 +71,26 @@ if (result?.user) {
   }
 }
 
+async function finishRedirectLogin() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) await saveProfile(result.user);
+  } catch (error) {
+    console.error("REDIRECT LOGIN ERROR", error);
+    const status = document.getElementById("authStatus");
+    if (status) status.textContent = `${error.code || "ERROR"}: ${error.message || ""}`;
+  }
+}
 
 function setup() {
   const button = document.getElementById("googleLogin");
-  if (!button) {
+  
+  // FIX: Isolated the event listener attachment to avoid skipping auth observers
+  if (button) {
+    button.addEventListener("click", loginWithGoogle);
+  } else {
     console.error("#googleLogin was not found");
-    return;
   }
-  button.addEventListener("click", loginWithGoogle);
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -93,7 +103,7 @@ function setup() {
     }
   });
 
-
+  finishRedirectLogin();
 }
 
 window.VP_LOGOUT = () => signOut(auth);
@@ -105,4 +115,3 @@ if (document.readyState === "loading") {
 }
 
 export { auth, db, loginWithGoogle };
-alert("AUTH GATE LOADED");
