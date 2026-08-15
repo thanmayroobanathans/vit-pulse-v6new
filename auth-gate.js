@@ -1,7 +1,6 @@
 import {
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -59,7 +58,11 @@ async function loginWithGoogle() {
   if (status) status.textContent = "OPENING GOOGLE SIGN-IN...";
 
   try {
-    await signInWithRedirect(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+if (result?.user) {
+  await saveProfile(result.user);
+  showApplication(result.user);
+}
   } catch (error) {
     console.error("GOOGLE LOGIN ERROR", error);
     if (status) status.textContent = `${error.code || "ERROR"}: ${error.message || ""}`;
@@ -70,16 +73,6 @@ async function loginWithGoogle() {
   }
 }
 
-async function finishRedirectLogin() {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result?.user) await saveProfile(result.user);
-  } catch (error) {
-    console.error("REDIRECT LOGIN ERROR", error);
-    const status = document.getElementById("authStatus");
-    if (status) status.textContent = `${error.code || "ERROR"}: ${error.message || ""}`;
-  }
-}
 
 function setup() {
   const button = document.getElementById("googleLogin");
@@ -100,7 +93,7 @@ function setup() {
     }
   });
 
-  finishRedirectLogin();
+
 }
 
 window.VP_LOGOUT = () => signOut(auth);
