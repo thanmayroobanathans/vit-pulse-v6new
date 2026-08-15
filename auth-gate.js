@@ -32,7 +32,6 @@ function showApplication(user) {
   const name = document.getElementById("userName");
   if (name && !name.value && user.displayName) name.value = user.displayName;
 
-  // FIX: Update the visible auth panel inside the active application view
   const authPanel = document.getElementById("authPanel");
   if (authPanel) authPanel.textContent = `AUTHENTICATED // ${user.email || ""}`;
 
@@ -73,8 +72,7 @@ async function loginWithGoogle() {
 
 async function finishRedirectLogin() {
   try {
-    const result = await getRedirectResult(auth);
-    if (result?.user) await saveProfile(result.user);
+    await getRedirectResult(auth);
   } catch (error) {
     console.error("REDIRECT LOGIN ERROR", error);
     const status = document.getElementById("authStatus");
@@ -85,21 +83,35 @@ async function finishRedirectLogin() {
 function setup() {
   const button = document.getElementById("googleLogin");
   
-  // FIX: Isolated the event listener attachment to avoid skipping auth observers
   if (button) {
     button.addEventListener("click", loginWithGoogle);
   } else {
     console.error("#googleLogin was not found");
   }
 
+  window.addEventListener("pageshow", (event) => {
+    if (button && event.persisted) {
+      button.disabled = false;
+      button.textContent = "CONTINUE WITH GOOGLE";
+    }
+  });
+
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       window.VP_USER = user;
-      try { await saveProfile(user); } catch (e) { console.error("PROFILE SAVE ERROR", e); }
+      try { 
+        await saveProfile(user); 
+      } catch (e) { 
+        console.error("PROFILE SAVE ERROR", e); 
+      }
       showApplication(user);
     } else {
       window.VP_USER = null;
       showLogin();
+      if (button) {
+        button.disabled = false;
+        button.textContent = "CONTINUE WITH GOOGLE";
+      }
     }
   });
 
